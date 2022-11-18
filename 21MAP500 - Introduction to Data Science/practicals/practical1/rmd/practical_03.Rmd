@@ -1,0 +1,50 @@
+---
+title: "Practical 3"
+aurthor: "Manazir"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output: html_notebook
+---
+
+###3.1
+
+```{r, echo=F, eval=F}
+# A <- matrix(c(1:4, 1:4), nrow = 4, ncol = 2)
+# A <- matrix(rep(1:4, times = 2), nrow = 4, ncol = 2 )
+# A <- matrix(rep(1:5, each = 2), nrow = 5, ncol = 2, byrow= T)
+# A <- cbind(1:4, 1:4)
+# A <- rbind(c(1, 1),c(2, 2), c(3, 3), c(4, 4))
+
+
+```
+
+###3.2
+
+```{r}
+multiply <- function(x, y) {
+  return(x * y)
+}
+
+x <- 1:3
+y <- 3:1
+
+l <- list(multiply, x, y)
+names(l) <- c("fun", "x", "y")
+l <- list("fun" = multiply, "x" = x, "y" = y )
+
+
+
+```
+
+```{r}
+l$fun(l$x, l$y)
+
+
+```
+
+```{r, echo=F, eval=F}
+w <- list("l"= l)
+length(w)
+
+```
+
+

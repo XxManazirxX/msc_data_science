@@ -1,0 +1,323 @@
+---
+title: "Lab 3_6"
+output: html_notebook
+---
+
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("pROC")
+library("nnet")
+```
+
+# Recap 
+
+## Importing the data
+
+```{r}
+comic_book_characters<-read_csv(here("data/comic_characters.csv"))
+```
+
+## Changing necessary variables to factors
+
+```{r}
+comic_book_characters <- comic_book_characters %>%
+  mutate_at(vars(ID, ALIGN,EYE,HAIR,SEX,LGBTQ,ALIVE,MONTH_FA,UNIVERSE), 
+            list(factor)) 
+```
+
+## Summarise the data set
+
+Okay so it turns out i may have misinterpreted this in lab 1. Summarising the dataset means, to look at the relationships between the variables. Technically we did do this later on in the lab when we checked that the relationship between appearances (the response variable) and time_fa (predictor variable). We will also do this in 5. from the lab today.
+
+## Removing incomplete cases
+
+Removing 
+```{r}
+clean_comic_book_characters<- comic_book_characters %>%
+  drop_na()
+```
+
+## Filtering the dataset
+
+```{r}
+comic_book_model_data <- clean_comic_book_characters %>%
+  filter(YEAR_FA >= 1956 & YEAR_FA <= 1999 )
+max(comic_book_model_data$YEAR_FA)
+min(comic_book_model_data$YEAR_FA)
+```
+
+
+
+6.  Now build, interpret and evaluate a logistic regression model using any combination of variables other than page_id and NAME to try to predict which UNIVERSE they are from.  Use ROC curves to choose the best model you can find.
+
+
+So we have a response variable UNIVERSE which is a categorical variable. Let's have a look number of observations in each level.
+
+```{r}
+summary(comic_book_model_data$UNIVERSE)
+```
+
+So we have two levels DC and Marvel. The base level is DC. Let's have a look at the possible predictor variables that we could use. 
+```{r}
+view(comic_book_model_data)
+```
+
+I think it is best to avoid any variables to do with physical appearances as you would expect overlap between the two universes. I wonder if a characters ID is specific to a universe?
+
+```{r}
+DC_data<- comic_book_model_data %>%
+  filter(UNIVERSE == "DC")
+summary(DC_data$ID)
+Marvel_data<- comic_book_model_data %>%
+  filter(UNIVERSE == "Marvel")
+summary(Marvel_data$ID)
+```
+
+
+```{r}
+comic_linmod3<-glm(UNIVERSE~YEAR_FA + ALIGN + ID,family="binomial",data=comic_book_model_data)
+comic_linmod3
+```
+
+
+$$
+\begin{align}
+{\rm logit}(P({\rm Marvel}))
+    =  & {\rm logit} (E(X)) \\ 
+    =  & b_0 + b_1\times {\rm YEARFA} + b_2\times {\rm isGood} \\
+    & + b_3\times {\rm isNeutral} + b_4\times {\rm isKnown} \\
+    & + b_5\times {\rm isDual} + b_6\times {\rm isPublic} + b_7\times {\rm isSecret}.
+\end{align}
+$$
+Using the **predict** function in R, we can now predict the probability that the character is from marvel given that they were introduced in 1990 as a good character with a secret identity:
+```{r}
+predict(comic_linmod3,newdata=data.frame(YEAR_FA = 1990, ALIGN = "Good Characters",ID = "Secret Identity"),type="response")
+```
+So the probabilty that this character is a marvel character is around 0.6, thus the probability that the character is from DC is 0.4.
+
+
+```{r}
+comic_book_model_data$preUNI<-ifelse(predict(comic_linmod3,newdata=comic_book_model_data, type="response")>= 0.5,"marvel","dc")
+table(comic_book_model_data$preUNI,comic_book_model_data$UNIVERSE)
+```
+
+Note that the columns here are the true values and the rows are the predictions.  So although it identified 337/(1017+337) DC characters correctly, but it only identified 2346/(2346+251) Marvel characters correctly.  So this isn't a great model.
+
+For classification problems such as this where you are interested in predicting which of two categories each case fits into, there are various terms we use to describe how well the model works.  If we consider that our goal is to identify Marvel characters, then the proportion of Marvel characters we correctly identify is called the _sensitivity_, here 2346/(2346+251), so quite a high sensitivity.  The proportion of Marvel characters that are NOT Marvel characters that are correctly labelled NOT Marvel is called the _specificity_, here, 337/(1017+337).  So the specificity is not actually that great.
+
+Let's have a go at changing the probablity threshold to be considered as a Marvel character. Then the confusion matrix becomes:
+
+```{r}
+comic_book_model_data$preUNI<-ifelse(predict(comic_linmod3,newdata=comic_book_model_data, type="response")>= 0.3,"marvel","dc")
+table(comic_book_model_data$preUNI,comic_book_model_data$UNIVERSE)
+```
+
+
+With the 0.5 probability cutoff we had:  
+$$
+\begin{align}
+{\rm sensitivity}(0.5) + {\rm specificity}(0.5) = 337/(1017+337) + 2346/(2346+251) = 1.152242
+\end{align}
+$$
+
+
+which is greater than the value of 1 we get for free with no model at all,we see a 15% increase in sensitivity + specifity.
+
+With the 0.3 probability cutoff we had:  
+$$
+\begin{align}
+{\rm sensitivity}(0.3) + {\rm specificity}(0.3) = 1 /(1353+1) +  2597/(2597) = 1.000739
+\end{align}
+$$
+
+
+This is a decrease in performance when compared to the probability threshold 0.5.
+
+
+There is a way to explore the best cutoff called using a _Receiver Operating Characteristic_ (ROC) curve.  This plots pairs (sensitivity, specificity) at each probability cutoff.  We can also use this to identify the cutoff that gives the best sum sensitivity+specificity, sometimes called _Youden's index_.  Then we can use that cutoff for predictions on future data.
+
+```{r}
+probMarvel<-predict(comic_linmod3,newdata=comic_book_model_data, type="response")
+rocMarvel<-roc(response=comic_book_model_data$UNIVERSE,predictor=probMarvel,auc=TRUE)
+ggroc(rocMarvel)+
+  geom_abline(aes(intercept=1,slope=1),colour="red")+
+  annotate(geom="text", x=0.25, y=0.25, label=paste("AUC =",round(auc(rocturbo),3) ),colour="blue" )
+```
+
+
+```{r}
+youdenMarvel<-coords(rocMarvel,"b",best.method="youden",transpose=TRUE)
+youdenMarvel
+youdenMarvel[2]+youdenMarvel[3] # This is specificity + sensitivity
+```
+
+
+So the best threshold is right around 0.65, and this achieves a  sensitivity+specificity of 0.6676514 + 0.5976126 = 1.265264 on this data instead of the 1 achieved at random.
+
+Another number often used to investigate the quality of a classification model with two classes is the area under the ROC curve (auc), which is =0.5 for a random model and =1 for a perfect model. In our case it is 0.683.
+
+
+
+7.  Build, evaluate and interpret a multinomial model using any combination of variables other than page_id and NAME to predict ALIGN for characters.  Use confusion matrices to compare the quality of models.
+
+First lets check the levels of ALIGN
+```{r}
+summary(comic_book_model_data$ALIGN)
+```
+
+We need to remove the 1 observation of the reformed criminal and drop the level from the factor ALIGN.
+
+```{r}
+comic_book_model_data$ALIGN <- droplevels(comic_book_model_data$ALIGN)
+levels(comic_book_model_data$ALIGN)
+```
+
+
+Multinomial models are similar to logistic models, but are for situations in which you are interested in predicting a categorical variable with more than two levels.  So, for our example, we have a response variable ALIGN which has levels Good, Bad and Neutral. If we wanted to predict the ALIGN of a character from the predictor variables ALIVE and YEAR_FA we would need multinomial regression. 
+
+
+One of these levels, Bad, will be the base level as before.  For each of the other two levels, we get an equation involving the predictor variables as in logistic regression.  So the output of a multinomial model is two equations:  
+
+$$
+{\rm logit}(P({\rm Good})) = b_{10} + b_{11}\times{\rm  isAlive} + b_{12}\times {\rm isDeceased} + b_{13}\times {\rm YEARFA}
+$$
+
+$$
+{\rm logit}(P({\rm Neutral})) = b_{20} + b_{21}\times{\rm  isAlive} + b_{22}\times {\rm isDeceased} + b_{23}\times {\rm YEARFA}
+$$
+
+Then 
+$$
+P({\rm Bad}) = 1-P({\rm Good})-P({\rm Neutral}).
+$$
+
+The multinomial regression method ensures that P(Bad) is always between 0 and 1, which would not necessarily happen if we built the equations as two separate logistic regression models.
+
+Note that whereas when a categorical variable is used as a predictor variable, each level other than the base level creates a new parameter in each equation.  When a categorical variable is used as a reponse variable, each level other than the base level creates a new _equation_.  
+
+## Fiting our model
+
+Fitting a multinomial regression model in R is pretty much the same as fitting other models, except it turns out that the standard glm function doesn't work.  Instead we use a function from a different package, called 'nnet'.
+
+
+We can fit the model:
+```{r}
+multi_comic<-multinom(ALIGN~ALIVE+YEAR_FA,data=comic_book_model_data)
+multi_comic
+```
+
+
+## 6.2:  Prediction with multinomial models
+
+When we predict using a multinomial model, it assigns each case to the class that has the greatest probability according to the model equations.  So, for example, for the first character in the dataset, the probabilities are:
+```{r}
+predict(multi_comic,type="probs")[1,] 
+```
+
+Since Good has the greatest probability, if we ask for a classification, we get Good:
+
+```{r}
+predict(multi_comic,type="class")[1]
+```
+
+As with logistic regression, we can create a confusion matrix for the classifications that are predicted this way.
+```{r}
+multitable<-table(comic_book_model_data$ALIGN,predict(multi_comic,type="class"))
+names(dimnames(multitable))<- list("Actual","Predicted")
+multitable
+```
+
+We can calculate sensitivity and specificity for each category:
+
+* Sensitivity(Bad) = 523/(523+1127) = 31.7%
+* Specificity(Bad) = 1316+0/(399+1316 +145+441) = 57%
+
+* Sensitivity(Good) = 1316 /(1316 + 399) = 91%
+* Specificity(Good) = 523/(523+1127+145+441)  = 23%
+
+* Sensitivity(Neutral) = 0/(145+441) = 0%
+* Specificity(Neutral) = 118/(523+1127+399+1316) = 4%
+
+
+Lets sum the sensitivity so we can compare other models later on with it.
+
+```{r}
+SSens <- multitable[1,1]/sum(comic_book_model_data$ALIGN=="Bad Characters") + # Sensitivity of Bad Characters
+  multitable[2,2]/sum(comic_book_model_data$ALIGN=="Good Characters")+ # Sensitivity of Good Characters
+  multitable[3,3]/sum(comic_book_model_data$ALIGN=="Neutral Characters") # Sensitivity of Neutral Characters
+SSens
+```
+
+This is okay. It hasn't done at all well in predicting neutral, but this could be down to the lack of neutral characters. 
+
+```{r}
+CCR <- (multitable[1,1]+multitable[2,2]+multitable[3,3])/length(comic_book_model_data$ALIGN)
+CCR
+```
+
+
+
+Adjusting thresholds in multinomial models
+
+Recall that with logistic models, we could change the prediction by changing the probability threshold we use for classification.  In particular, we can set a different threshold, T, for one of the levels, and this gives us a corresponding new threshold 1-T for the other level.  Another way to think of this is that we weight the probabilities we use in computing the maximum probability:
+
+$$
+\mbox{Weighted }P(0) = TP(0) := \omega_0 P(0) \\
+\mbox{Weighted }P(1) = (1-T)P(1) := \omega_1 P(1) 
+$$
+
+Now as before, we take the maximum of the three adjusted probabilities as the predicted class.
+
+For example, if we want to ramp up the chances of a Neutral prediction, and make bad a bit more probable, we could let $\omega_1=1$, $\omega_2=1$, and $\omega_3=2$.
+Then we get weighted probabilities:
+```{r}
+newprobs<-predict(multi_comic,type="probs")*cbind(rep(1,3951),rep(1,3951),rep(3,3951))
+head(newprobs,10)
+```
+
+This gives corresponding new predictions
+```{r}
+newpred<-ifelse(apply(newprobs,1,which.max)==1,"Bad Characters",
+                ifelse(apply(newprobs,1,which.max)==2,"Good Characters","Neutral Characters")
+                )
+head(newpred,n=10)
+```
+
+We can create a new confusion matrix:
+```{r}
+newmultitable<-table(comic_book_model_data$ALIGN,newpred)
+names(dimnames(newmultitable))<- list("Actual","New Predicted")
+newmultitable
+```
+We are definitely starting to pick up more neutral characters which is good.
+ 
+
+$$
+{\rm SSens} = \sum_{j \in levels} {\rm Sensitivity}(j).
+$$
+
+We can get this from the confusion matrix by the following:
+```{r}
+SSens <- newmultitable[1,1]/sum(comic_book_model_data$ALIGN=="Bad Characters") + # Sensitivity of Bad Characters
+  newmultitable[2,2]/sum(comic_book_model_data$ALIGN=="Good Characters")+ # Sensitivity of Good Characters
+  newmultitable[3,3]/sum(comic_book_model_data$ALIGN=="Neutral Characters") # Sensitivity of Neutral Characters
+SSens
+```
+
+
+
+We can optimse the weights to maximise either of these objectives.  Maximising SSens will give us the 3-class Youden index, which will be a set of weights, up to a constant multiple.
+There is not an R command that does that, but you can play around with values.
+
+We may also just care about the best overall number of correct classifications, regardless of which group they are in (note that if one group is much larger than the others, this may occur by simply putting everything into that group!).  This is the _correct classification rate_, which will be between 0 and 1.
+
+```{r}
+CCR <- (newmultitable[1,1]+newmultitable[2,2]+newmultitable[3,3])/length(comic_book_model_data$ALIGN)
+CCR
+```
+
+

@@ -1,0 +1,30 @@
+"0","nasa_temp <-  read_table(here(""data"",""nasa_global_temperature.txt""),"
+"0","           col_names = F,"
+"0","                skip=5) "
+"1","
+[36m--[39m [1m[1mColumn specification[1m[22m [36m------------------------[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m
+)
+
+"
+"0","# skips all irrelevant lines"
+"0","nasa_temp <- clean_names(nasa_temp)"
+"0","           "
+"0","colnames(nasa_temp) = c(""date"", ""temp"", ""z"")"
+"0","# change column names"
+"0",""
+"0","nasa_temp <- nasa_temp %>%"
+"0","  clean_names()%>%"
+"0","  select(date, temp) %>%"
+"0","  "
+"0","  # eradicates unwanted column"
+"0","  mutate(date =parse_date_time(date, orders =""%Y-01-01"" ))%>%"
+"0","  mutate(date = as.Date.character(date, format = ""%Y-%m-%d""))"
+"0",""
+"0",""
+"0","# converts year, to full date format"
+"0",""
+"0",""

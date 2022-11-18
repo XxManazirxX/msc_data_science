@@ -1,0 +1,7 @@
+"0","pl_20_21 <- as_tibble(PL_20_21) %>%"
+"0","  select(Div:AR)"
+"0","  pl_20_21$Date <- as.Date(pl_20_21$Date, format = ""%d/%m/%Y"")"
+"0","  mutate(season = ""2020/21"")"
+"2","Error in UseMethod(""mutate"") : 
+  no applicable method for 'mutate' applied to an object of class ""character""
+"

@@ -1,0 +1,2 @@
+"0","    ggplot(data = mpg) +"
+"0","      geom_freqpoly(mapping = aes(x = cty, colour = class), binwidth = 3)"

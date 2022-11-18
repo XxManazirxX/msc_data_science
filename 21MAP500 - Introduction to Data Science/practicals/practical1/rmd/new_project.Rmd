@@ -1,0 +1,61 @@
+---
+title: "Practical1"
+subtitle: "my subtitle"
+aurthor: "Manazir"
+output: 
+  html_document:
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 3 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: true # should the sections be numbered?
+    highlight: tango # specifies the syntax highlighting style
+---
+<!-- # Section -->
+<!-- ## Subsection -->
+<!-- ### Subsubsection -->
+
+<!-- 1. **Item 1** -->
+<!-- 2. _Item 2_ -->
+<!--     a) `Item 2a` -->
+<!--     b) Item~2b~ -->
+
+<!-- $$ y_i = \beta_1 x_{i1} + \beta_2 x_{i2} +\dots + \beta_p x_{ip} + \varepsilon_i, $$ -->
+<!-- #Ex 1.2a -->
+
+<!-- <!-- - executes the code and shows code, output and warnings below the full code chunk, --> -->
+
+<!-- <!-- ```{r, echo=F} --> -->
+<!-- <!-- # set results = "hold" --> -->
+<!-- <!-- x <- 42 --> -->
+<!-- <!-- x --> -->
+<!-- <!-- log(-1) --> -->
+<!-- <!-- ``` --> -->
+
+<!--     ```{r, echo =F} -->
+<!--     library("tidyverse") -->
+<!--     library("here") -->
+<!--     ``` -->
+
+<!--     ```{r, echo = F} -->
+<!--     knitr::opts_chunk$set( -->
+<!--       results = "hold" -->
+<!--     ) -->
+
+<!--     ```     -->
+
+
+<!-- ```{r, eval = FALSE, echo = FALSE} -->
+<!--     read_csv(here("data", "mcdonalds_menu.csv")) -->
+<!-- ``` -->
+
+<!-- ![cat picture](../figures/cat.jpg) -->
+
+
+```{r, echo=F, eval=F}
+x <- rnorm(n=10)
+print(round(mean(x), digits=2))
+results= "hold" 
+
+```
+The means of `x` \= $x$ \ 
+
+

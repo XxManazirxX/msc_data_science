@@ -1,0 +1,2 @@
+"0","Ames2<-Ames2[!(Ames2$MS_Zoning %in% c(""A_agr"",""C_all"",""I_all"")),]"
+"0","Ames2$MS_Zoning<-droplevels(Ames2$MS_Zoning)"

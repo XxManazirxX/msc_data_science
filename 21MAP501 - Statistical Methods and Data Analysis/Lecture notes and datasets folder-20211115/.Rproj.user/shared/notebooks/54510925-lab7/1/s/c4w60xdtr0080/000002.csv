@@ -1,0 +1,1 @@
+"0","wtloss<-pivot_longer(weightloss, -c(id,diet,exercises),values_to=""Score"",names_to=""Time"")"

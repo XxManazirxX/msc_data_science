@@ -1,0 +1,11 @@
+"0","# This is a setup chunk. It reads some global options from the external R"
+"0","# script rmarkdown_setup.R which is in the ""scripts"" folder."
+"0","source(here::here(""scripts"", ""rmarkdown_setup.R""))"
+"2","Warning in file(filename, ""r"", encoding = encoding) :"
+"2","
+ "
+"2"," cannot open file 'C:/Users/nada7/OneDrive/Documents/Part T/21MAP500 - Introduction to Data Science/practicals/practical1/scripts/rmarkdown_setup.R': No such file or directory
+"
+"2","Error in file(filename, ""r"", encoding = encoding) : 
+  cannot open the connection
+"

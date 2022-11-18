@@ -1,0 +1,6 @@
+"0","    trees2 %>%"
+"0","      ggplot(mapping = aes(x = Height, y = Diameter)) +"
+"0","      geom_point()+"
+"0","      labs(x = ""Height in feet"", y = ""Diameter in inches"") +"
+"0","      ggtitle(""Height and diameter of black cherry trees"") +"
+"0","      theme_classic()"

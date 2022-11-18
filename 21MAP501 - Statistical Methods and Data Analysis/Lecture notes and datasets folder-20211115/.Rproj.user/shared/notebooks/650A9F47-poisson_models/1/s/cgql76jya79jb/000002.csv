@@ -1,0 +1,6 @@
+"0","mpgbody <- autot %>%"
+"0","  group_by(body_style) %>%"
+"0","  summarise(meanhw_mpg =mean(highway_mpg),"
+"0","            sdhw_mpg = sd(highway_mpg),"
+"0","            meancity_mpg = mean(city_mpg),"
+"0","            sdcity_mpg = sd(city_mpg))"

@@ -1,0 +1,286 @@
+---
+title: "Practical 8"
+author: "Axel Finke"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+
+```{r setup, echo = FALSE, message = FALSE}
+# This is a setup chunk. It reads some global options from the external R
+# script rmarkdown_setup.R which is in the "scripts" folder.
+source(here::here("scripts", "rmarkdown_setup.R"))
+```
+
+
+### 8.0 Exercise
+
+Start a new R notebook named `practical_08.Rmd` and save it to the `rmd` folder of your RStudio project `practicals`. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook. 
+
+
+
+
+### 8.1 Exercise
+
+Consider the `gapminder` data again. To simplify the graphs, exclude any data points associated with countries from Oceania for this exercise.
+
+a. Create again a scatterplot of the base-10 logarithm of GDP per capita vs life expectancy in 2007 for all continents except Oceania and such that the size of the points gives information about the population size. Recall that before we used colours to distinguish the different continents. Now use faceting instead. Remember to use transparency to lessen the impact of overlapping points.
+  
+    ```{r, eval = FALSE, message = FALSE, echo = FALSE, fig.height = 4, fig.width = 6}
+    df <- gapminder %>% 
+      filter(year == 2007 & continent != "Oceania")
+    
+    df %>% 
+      ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp, size = pop)) +
+      geom_point(alpha = 0.3) +
+      facet_wrap(facets = vars(continent)) # or write facet_wrap(~continent)
+    ```
+
+b. Make it easier to compare the data values for a particular continent to those for all continents by adding the values for all continents in light grey shade in the background of each panel.
+    ```{r, eval = FALSE, message = FALSE, echo = FALSE, fig.height = 4, fig.width = 6}
+    # Only the antepenultimate line is new here
+    df %>% 
+      ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp, size = pop)) +
+      geom_point(data = select(df, !continent), colour = "grey85") +
+      geom_point(alpha = 0.3) +
+      facet_wrap(facets = vars(continent))
+    ```
+
+
+c. Reproduce the following figure.
+  
+    ```{r, message = FALSE, echo = FALSE, fig.height = 4, fig.width = 9}
+    df <- gapminder %>% 
+      filter(continent != "Oceania")
+    
+    df %>% ggplot(mapping = aes(x = year, y = lifeExp, group = country)) +
+      geom_line(data = select(df, !continent), colour = "grey85") +
+      geom_line(alpha = 0.2) +
+      facet_wrap(facets = vars(continent))
+    ```
+
+d. Recreate the figures from Exercise 7.1(j) (Problem sheet 7) but now use faceting to circumvent the drawbacks of "stacking".
+
+    ```{r, message = FALSE, echo = FALSE, eval = FALSE, fig.height = 3, fig.width = 4.5}
+    # First figure
+    df_pop <- gapminder %>%
+      filter(continent != "Oceania") %>%
+      group_by(year, continent) %>%
+      summarise(pop_in_bn = sum(pop) / 10^9)
+    
+    ggplot(data = df_pop, mapping = aes(x = year, y = pop_in_bn)) +
+      geom_col(data = select(df_pop, !continent), fill = "grey85") +
+      geom_col(mapping = aes(x = year, y = pop_in_bn)) +
+      facet_wrap(facets = vars(continent))
+    
+    # Second figure
+    df_gdp <- gapminder %>%
+      filter(continent != "Oceania") %>%
+      group_by(year, continent) %>%
+      summarise(gdp_in_tn = sum(pop * gdpPercap) / 10^12)
+    
+    ggplot(data = df_gdp, mapping = aes(x = year, y = gdp_in_tn)) +
+      geom_col(data = select(df_gdp, !continent), fill = "grey85") +
+      geom_col(mapping = aes(x = year, y = gdp_in_tn)) +
+      facet_wrap(facets = vars(continent))
+    ```
+
+
+
+### 8.2 Exercise
+
+a. Consider the `gapminder` data and create a scatterplot of `gdpPercap` vs `lifeExp` for the year 2007 with point sizes representing population sizes. Exclude countries which have a population sizes greater than 10 million from your plot in two ways; first, by filtering the data manually; second, by setting a suitable scale limit.
+
+    ```{r, eval = FALSE, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 3, fig.height = 2}
+    gapminder %>% 
+      filter(year == 2007) %>%
+      filter(pop <= 10^7) %>% # manually filtering the data
+      ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) + 
+      geom_point(alpha = 0.2)
+    
+    gapminder %>% 
+      filter(year == 2007) %>%
+      ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) + 
+      geom_point(alpha = 0.2) + 
+      scale_size_continuous(limits = c(0, 10^7)) # setting the "size" scale limit
+    ```
+
+b. Again create a scatterplot of GDP per capita vs life expectancy for the year 2007. But now ensure that `gdpPercap` is shown on a `log` scale in two ways: first, by transforming the data manually; second, by setting a suitable position scale.
+    
+    ```{r, eval = FALSE, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 3, fig.height = 2}
+    gapminder %>% 
+      filter(year == 2007) %>%
+      mutate(log_gdp_percap = log(gdpPercap)) %>% # manually transforming the data
+      ggplot(mapping = aes(x = log_gdp_percap, y = lifeExp)) + 
+      geom_point(alpha = 0.2)
+    
+    gapminder %>% 
+      filter(year == 2007) %>%
+      ggplot(mapping = aes(x = gdpPercap, y = lifeExp)) + 
+      geom_point(alpha = 0.2) + 
+      scale_x_continuous(trans = "log", breaks = pretty(0:60000)) # # adjusting the position scale instead
+    ```
+    
+### 8.3 Exercise
+
+a. Recreate the following two-dimensional histogram for the `diamonds` data set, where both axes use the `log10` transformation.
+
+    ```{r, fig.width = 4, fig.height = 3, echo = FALSE}
+    diamonds %>%
+      ggplot(mapping = aes(x = carat, y = price)) +
+      geom_bin2d() + 
+      scale_x_continuous(trans = "log10") +
+      scale_y_continuous(trans = "log10")
+    ```
+    
+b. Now use change the color scheme to one of those from the **RColorBrewer** package.
+
+    ```{r, fig.width = 4, fig.height = 3, eval = FALSE, echo = FALSE}
+    library("RColorBrewer")
+    diamonds %>%
+      ggplot(mapping = aes(x = carat, y = price)) +
+      geom_bin2d() + 
+      scale_x_continuous(trans = "log10") +
+      scale_y_continuous(trans = "log10") +
+      scale_fill_distiller(palette = "RdPu")
+    ```
+    
+c. **[Thinking about the answer to this question gives you a better understanding of ggplot2; but it is not necessary for the rest of the module]** Explain why it was possible to change the color scheme by adjusting the `fill` scale even though we did not (explicitly) map any variable to the fill aesthetic.
+
+    ```{r, echo = FALSE}
+    # We used geom_bin2d() which creates a histogram, i.e. it calls the 
+    # statistical transformation which bins the data and then maps the resulting 
+    # bin heights (which represent the number of data values in each bin) to 
+    # the fill aesthetic. As a (tedious) alternative, we could have created 
+    # the bins ourselves, counted the number of data points in each bin, and
+    # then used geom_tile() instead of geom_bin2d() in which we explicitly
+    # mapped the bin heights to the fill aesthetic.
+    ```
+
+
+### 8.4 Exercise
+
+Recreate the following figure based on the `gapminder` data by following these steps (note that the countries are ordered according to life expectancy in 2007).
+    
+  ```{r, fig.width = 4.5, fig.height = 5, echo = FALSE}
+  gapminder %>%
+    filter(year == 2007) %>%
+    select(country, lifeExp) %>%
+    rename(life_exp_2007 = lifeExp) -> df
+  
+  gapminder %>%
+    filter(continent == "Asia") %>%
+    left_join(df, by = "country") %>%
+    ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+    geom_tile() +
+    scale_fill_gradient(
+      low      = "darkblue", 
+      high     = "white") +
+    scale_x_continuous(expand = c(0, 0))
+  ```
+
+a. Filter the data to only focus on countries in Asia and create a heatmap in which `lifeExp` is mapped to the `fill` aesthetic.
+    
+    ```{r, fig.width = 4.5, fig.height = 5, eval = FALSE, echo = FALSE}
+    gapminder %>%
+      filter(continent == "Asia") %>%
+      ggplot(mapping = aes(x = year, y = country, fill = lifeExp))+
+      geom_tile() 
+    ```
+b. Extend the previous figure by adding a column `life_exp_2007` to the data set which simply states the life expectancy in the year 2007 for each country. Then, when plotting the data, reorder `country` by `life_exp_2007`.
+    
+    ```{r, fig.width = 4.5, fig.height = 5, eval = FALSE, echo = FALSE}
+    gapminder %>%
+      filter(year == 2007) %>%
+      select(country, lifeExp) %>%
+      rename(life_exp_2007 = lifeExp) -> df
+    
+    gapminder %>%
+      filter(continent == "Asia") %>%
+      left_join(df, by = "country") %>%
+      ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+      geom_tile()
+    ```
+  
+c. Adjust the color scheme to go from "darkblue" (smallest values) to "white" (largest values) and remove the padding along the first axis.
+
+    ```{r, fig.width = 4.5, fig.height = 5, echo = FALSE}
+    # The solution is the code which produces the figure at the beginning of the exercise. 
+    ```
+        
+### 8.5 Exercise*
+
+The XML feed at <https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml> provides live information about the status of the cycle hire stations which are part of Transport for London's bike hire scheme. In this exercise, you will create an interactive map which lets you check how many bikes are available at each station in real time.
+
+a. If you have an active internet connection, install the package `RCurl` and import the data from the XML file into R using the following code. This uses the live XML feed, i.e. you will be able to visualise how many bikes are available at which station in real time.
+
+    ```{r, echo = TRUE, eval = FALSE, fig.width = 6, fig.height = 3}
+    library("XML")
+    library("RCurl") # you will need to install this package first
+    "https://tfl.gov.uk/tfl/syndication/feeds/cycle-hire/livecyclehireupdates.xml" %>%
+      getURL() %>%
+      xmlParse() %>% 
+      xmlToDataFrame(stringsAsFactors = FALSE) %>%
+      tibble() -> bike_stations
+    ```
+
+    If you don't have an active internet connection or if the above code does not work on your machine, download the file `livecyclehireupdates.xml` provided on Learn into the `data` subfolder of your RStudio project folder and read in the data as follows. Of course, in this case, you will not be using real-time data.
+
+    ```{r, echo = TRUE, eval = FALSE, fig.width = 6, fig.height = 3}
+    library("XML")
+    here("data", "livecyclehireupdates.xml") %>%
+      xmlParse() %>%
+      xmlToDataFrame(stringsAsFactors = FALSE) %>%
+      tibble() -> bike_stations
+    ```
+
+
+b. Remove the variables `installDate` and `removalDate` (we won't need them) and then make sure that all other variables have suitable data types.
+
+    ```{r, echo = FALSE, eval = FALSE, fig.width = 6, fig.height = 3}
+    bike_stations <- bike_stations %>%
+      select(!c(installDate, removalDate)) %>%
+      clean_names() %>%
+      mutate(across(c(lat, long), as.double)) %>%
+      mutate(across(c(id, nb_bikes, nb_empty_docks, nb_docks), as.integer)) %>%
+      mutate(across(c(installed, locked, temporary), as.logical))
+    ```
+
+c. Display the locations of the bike stations as markers a map so that (i) when you hover over a marker, you see the name of the station, (ii) when you click on a marker, you see the number of available bikes at a station. 
+
+    ```{r, echo = FALSE, eval = FALSE, fig.width = 6, fig.height = 3}
+    bike_stations %>%
+    leaflet() %>%
+    addTiles() %>%
+    addMarkers(
+      lng   = ~long, 
+      lat   = ~lat,
+      popup = ~paste("Bikes available:", nb_bikes),
+      label = ~name
+    )
+    ```
+
+d. Modify your marker icons such that bike stations without any available bikes are displayed using a different symbol. To do this, add a variable `group` to your data frame which takes value `1` of a station is empty and `2` if it has bikes available. Then create an icon list as follows, where `empty.png` and `nonempty.png` are two images for the icons which you have saved to the `figures` subfolder within your project folder (you can create your images for the icons or use the images provided on Learn). You may need to adjust the numerical values for `iconWidth` and `iconHeight` below to make sure your icons have a suitable size.
+
+    ```{r, eval = FALSE}
+     my_icons <- 
+      iconList(
+        makeIcon(here("figures", "empty.png"),    iconWidth = 20, iconHeight = 20),
+        makeIcon(here("figures", "nonempty.png"), iconWidth = 20, iconHeight = 20)
+      )
+    ```
+
+    You will then have different marker icons for the two groups (empty and non-empty) if you pass the argument `icon  = ~my_icons[group]` to the function `addMarkers()`.
+
+    ```{r, echo = FALSE, eval = FALSE, fig.width = 6, fig.height = 3}
+    bike_stations %>%
+      mutate(group = (nb_bikes > 0) + 1) %>%
+      leaflet() %>%
+      addTiles() %>%
+      addMarkers(
+        lng   = ~long, 
+        lat   = ~lat,
+        popup = ~paste("Bikes available:", nb_bikes),
+        label = ~name,
+        icon  = ~my_icons[group]
+      )
+    ```

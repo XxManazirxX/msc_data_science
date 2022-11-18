@@ -1,0 +1,6 @@
+"0","ggplot("
+"0","  data.frame(x=seq(-10,10,0.01),density=dnorm(seq(-10,10,0.01),m=0,sd=5)),aes(x,density))+"
+"0","  geom_line()+"
+"0","  labs(x = ""x"", y = ""Density"") +"
+"0","      ggtitle(""Gaussian Distribution with m=0, sd=5"") +"
+"0","      theme_classic()"

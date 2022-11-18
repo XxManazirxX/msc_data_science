@@ -1,0 +1,303 @@
+---
+title: "Lab 2"
+output: html_notebook
+---
+
+# Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+```
+
+# Lab 1 - Recap 
+
+## Importing the data
+
+```{r}
+comic_book_characters<-read_csv(here("data/comic_characters.csv"))
+```
+
+## Changing necessary variables to factors
+
+```{r}
+comic_book_characters <- comic_book_characters %>%
+  mutate_at(vars(ID, ALIGN,EYE,HAIR,SEX,LGBTQ,ALIVE,MONTH_FA,UNIVERSE), 
+            list(factor)) 
+```
+
+## Summarise the data set
+
+Okay so it turns out i may have misinterpreted this in lab 1. Summarising the dataset means, to look at the relationships between the variables. Technically we did do this later on in the lab when we checked that the relationship between appearances (the response variable) and time_fa (predictor variable). We will also do this in 5. from the lab today.
+
+## Removing incomplete cases
+
+Removing 
+```{r}
+clean_comic_book_characters<- comic_book_characters %>%
+  drop_na()
+summary(clean_comic_book_characters$ALIGN)
+clean_comic_book_characters$ALIGN <- droplevels(clean_comic_book_characters$ALIGN)
+summary(clean_comic_book_characters$ALIGN)
+```
+
+
+## Filtering the dataset
+
+```{r}
+comic_book_model_data <- clean_comic_book_characters %>%
+  filter(YEAR_FA >= 1956 & YEAR_FA <= 1999 )
+max(comic_book_model_data$YEAR_FA)
+min(comic_book_model_data$YEAR_FA)
+```
+
+## Building the model
+
+```{r}
+comic_linmod<-lm(APPEARANCES~YEAR_FA,data=comic_book_model_data)
+```
+
+See Lab 1 for the assumption checking, but remember this model really wasn't a good one.
+
+
+5. Now add the variables ALIGN and ALIVE to the model and evaluate and interpret the new model.
+
+Okay so we have been asked to add the variables ALIGN and ALIVE (predictors). Lets check what type of variables these are. In the top right hand corner we can see that ALIGN is a factor and ALIVE is a factor. Lets check the levels of ALIGN.
+
+```{r}
+levels(comic_book_model_data$ALIGN)
+```
+
+Lets check the number of characters for each level (learn from the exercise in lecture 2)
+
+```{r}
+summary(comic_book_model_data$ALIGN)
+```
+
+So we have 0 reformed criminals so we need to drop this level.
+
+```{r}
+comic_book_model_data$ALIGN <- droplevels(comic_book_model_data$ALIGN)
+levels(comic_book_model_data$ALIGN)
+```
+
+Now, lets do the same for ALIVE
+
+```{r}
+levels(comic_book_model_data$ALIVE)
+```
+
+Lets check the number of characters for each level (learn from the exercise in lecture 2)
+
+```{r}
+summary(comic_book_model_data$ALIVE)
+```
+
+This is okay. So lets build the model.
+
+```{r}
+comic_linmod2<-lm(APPEARANCES~YEAR_FA + ALIGN + ALIVE,data=comic_book_model_data)
+summary(comic_linmod2)
+```
+
+
+
+$$
+\begin{align}
+\mbox{mean appearances} \sim  N( &8512 + -4.3\times {\rm YEARFA} \\ 
+&+66\times{\rm isGOOD} + 
+                         32\times {\rm isNEUTRAL} \\ 
+&28\times {\rm isLIVING} , 174.6).
+\end{align}
+$$
+
+
+Now lets examine the diagnostic plots:
+
+```{r}
+comic_linmod2 %>%
+  gg_diagnose(max.per.page = 1)
+
+```
+
+First consider the histogram and qq plot for the residuals.  These have not changed, the histogram look poisson distributed (you will learn about this in the afternoon) and the qq plot is not straight and has a tail at the end.  
+
+Now look at the scatter plot against the covariate, year_fa , and the plot of fitted against the residuals. For year_fa, you could argue that there is larger spread at the lower values but its okay (not changed). For fitted vs residuals it definitely starts to spread more as the fitted values increase. 
+
+
+Next consider the residuals versus the categorical variables:
+The interquartile ranges in the boxplots don't seem to vary a lot, however it seems that there are so many outliers it is really hard to tell. 
+
+After looking at the plots its clear that the model is still not great and we should try using a Poisson model.
+
+
+6.  Import the football dataset and build a model to predict goals scored as a function of minutes played and position, but use * in between predictors instead of + in order to include interaction terms.  Interpret the model, evaluate the model assumptions and compare to the previous model.
+
+
+# Importing the data
+
+
+```{r}
+pl_players_18_19<-clean_names(read_csv(here("data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                            na = c("?","","NA","N/A","Na"),))
+
+```
+
+
+# Cleaning the data
+
+Lets check for NAs
+
+```{r}
+pl_players_18_19 %>% sapply(function(x) sum(is.na(x)) )
+```
+
+Nice!
+
+Now lets convert the necessary variables to factors. We are going to be using goals scored (response variable), minutes played (predictor variable) and position (predictor variable) in our model. Postion needs to be a factor so lets change this.
+
+```{r}
+pl_players_18_19 <- pl_players_18_19 %>%
+  mutate_at(vars(position), 
+            list(factor))
+```
+
+Lets check the levels and number of players within those levels.
+```{r}
+summary(pl_players_18_19$position)
+```
+
+In this case defender is the base level of position (predictor variable).
+
+
+Lets check the relationship between goals scored (response variable) and minutes played (predictor variable).
+
+```{r}
+pl_players_18_19 %>% ggplot(aes(minutes_played_overall,goals_overall))+
+  geom_point() +
+  labs(x = "Minutes Played", y = "Goals Scored") +
+  ggtitle("Minutes played versus Goals Scored") +
+  theme_classic()
+```
+
+
+
+```{r}
+pl_players_18_19 %>% ggplot(aes(minutes_played_overall,goals_overall, colour = position))+
+  geom_point() +
+  labs(x = "Minutes Played", y = "Goals Scored") +
+  ggtitle("Minutes played versus Goals Scored") +
+  theme_classic()
+```
+
+I imagine that goalies, if ever, score a lot of goals so lets make a plot of just the goalies.
+
+```{r}
+pl_goalies_18_19 <- pl_players_18_19 %>%
+  filter(position == "Goalkeeper")
+pl_goalies_18_19$goals_overall
+```
+
+So not a single goalkeeper has scored a goal, lets remove them from the dataset. When we do this, defender is still the base level.
+
+```{r}
+#Removing the goalies
+pl_outfield_players_18_19 <- pl_players_18_19 %>%
+  filter(position != "Goalkeeper")
+
+# Dropping the level
+pl_outfield_players_18_19$position <- droplevels(pl_outfield_players_18_19$position)
+
+# Replotting the data
+
+pl_outfield_players_18_19 %>% ggplot(aes(minutes_played_overall,goals_overall, colour = position))+
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "Minutes Played", y = "Goals Scored") +
+  ggtitle("Minutes played versus Goals Scored") +
+  theme_classic()
+```
+Okay so it looks like there may be a linear relationship lets build the model.
+
+```{r}
+football_lm_1<- lm(goals_overall ~ position + minutes_played_overall, data = pl_outfield_players_18_19)
+summary(football_lm_1)
+```
+
+So our model is
+
+$$
+\begin{align}
+\mbox{mean goals overall} \sim  N( &-1.97 + 4.35\times {\rm isFORWARD} \\ 
+&+1.43\times{\rm isMIDFIELDER} + 
+                         0.0018401\times MINUTESPLAYEDOVERALL, 2.712).
+\end{align}
+$$
+Now lets look at the diagnostic plots
+
+```{r}
+football_lm_1 %>%
+  gg_diagnose(max.per.page = 1)
+
+```
+
+First consider the histogram and qq plot for the residuals. These are pretty good.  
+
+Now look at the scatter plot against the covariate minutes_played_overall and the plot of fitted against the residuals. For covariate minutes_played_overall, this looks okay you could argue that as the minutes_overall increases the spead increases but this is okay. For the fitted against the residuals there looks to be something funky going on but I'm not to sure what could be causing it, however the spread does increases as the fitted values increase but it is okay in the scenario.
+
+
+Next consider the residuals versus the categorical variables:
+The interquartile ranges in the boxplots for midfielder seem to be similar whereas the forward seem to be much larger but this is okay.
+
+Overall this model is okay.
+
+## Interactions Terms
+
+I'm not too sure whether Eugenie has covered this but I find this example really helpful. Link to the website is here (yes its for an ANOVA but the same applies in our case): https://statisticsbyjim.com/regression/interaction-effects/
+
+Interaction effects can be thought of as an “it depends” effect. You’ll see why! Let’s start with an intuitive example to help you understand these effects conceptually.
+
+To keep things simple, we’ll include only two foods (ice cream and hot dogs) and two condiments (chocolate sauce and mustard) in our analysis.
+
+Given the specifics of the example, an interaction effect would not be surprising. If someone asks you, “Do you prefer ketchup or chocolate sauce on your food?” Undoubtedly, you will respond, “It depends on the type of food!” That’s the “it depends” nature of an interaction effect. You cannot answer the question without knowing more information about the other variable in the interaction term—which is the type of food in our example! 
+
+For the satisfaction case, coding an interaction term would be simply done by putting * rather than a + between food and condiment.
+
+
+In our case there are a couple of questions that suggest an interaction “How many goals will a player score in 10 games?”. The response will most likely be "It depends on what position they play". "How many goals will a forward (can be any position here) score?". A response would be "It depends on how many minutes they play". Each level of position (categorical predictor variable) interacts with the covariate overall_minutes_played (predictor variable). This means there will be an extra two terms in our model. Lets build this model.
+
+```{r}
+football_lm_2<- lm(goals_overall ~ position * minutes_played_overall, data = pl_outfield_players_18_19)
+summary(football_lm_2)
+```
+
+
+$$
+\begin{align}
+\mbox{mean goals overall} \sim  N( &-0.12 + - 1.03\times {\rm isFORWARD} \\ 
+&-0.03\times{\rm isMIDFIELDER} + 
+                         0.00057\times MINUTESPLAYEDOVERALL \\
+& + 0.0044 \times {\rm isFORWARD * MINUTESPLAYEDOVERALL}\\                         
+& + 0.00098 \times {\rm isMIDFIELDER * MINUTESPLAYEDOVERALL}                         , 2.712).
+\end{align}
+$$
+
+Now lets check the diagnostic plots
+
+```{r}
+football_lm_2 %>%
+  gg_diagnose(max.per.page = 1)
+```
+First consider the histogram and qq plot for the residuals. These are okay. Hard to tell which model is better.
+
+Now look at the scatter plot against the covariate minutes_played_overall and the plot of fitted against the residuals. For covariate minutes_played_overall, there seems to be a definite increase in spread as the minutes increase, would suggest heteroscedacitisty and it is also worse than the previous model. For the fitted against the residuals there looks to be something funky going again on but I'm not to sure what could be causing it, however the spread does seem to be okay. 
+
+
+Next consider the residuals versus the categorical variables:
+The interquartile ranges in the boxplots for midfielder seem to be similar whereas the forward seem to be much larger but this may be slightly worse than before.
+
+I would say that model 1 is better, but both models can definitely be improved! Once again we have a count response variable so Poisson would be better in this case.
+

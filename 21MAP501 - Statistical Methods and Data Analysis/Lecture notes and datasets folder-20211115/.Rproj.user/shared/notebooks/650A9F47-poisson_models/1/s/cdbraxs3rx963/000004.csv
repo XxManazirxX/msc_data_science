@@ -1,0 +1,2 @@
+"0","pl_poissondata <- rbind(HomeT, AwayT)"
+"0","pl_poissondata[c(1,381),]"

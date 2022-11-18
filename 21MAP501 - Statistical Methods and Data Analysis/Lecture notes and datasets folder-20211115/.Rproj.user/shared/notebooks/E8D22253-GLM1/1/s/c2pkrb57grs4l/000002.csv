@@ -1,0 +1,8 @@
+"0","trees2 %>% ggplot(aes(Height,Diameter))+"
+"0","      geom_point() +"
+"0","      geom_smooth(method = ""lm"", se = FALSE,colour=""red"") +"
+"0","      labs(x = ""Height in feet"", y = ""Diameter in inches"") +"
+"0","      ggtitle(""Height and diameter of black cherry trees"") +"
+"0","      theme_classic()"
+"2","`geom_smooth()` using formula 'y ~ x'
+"

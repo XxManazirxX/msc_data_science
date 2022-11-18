@@ -1,0 +1,278 @@
+---
+title: "Generalised Linear Models 5: Quantifying uncertainty through confidence and prediction intervals"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+## Set up from previous sections
+```{r, message = FALSE,comment=FALSE}
+library("MASS")
+library("sandwich")
+library("investr")
+library("rio")
+library("pROC")
+library("nnet")
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("rcompanion")
+library("ggcorrplot")
+library("corrr")
+library("effects")
+```
+
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  dplyr::select(Height,Diameter,Volume)
+
+linmod1<-glm(Diameter~Height,family=gaussian,data=trees2)
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+linmod5<-glm(as.factor(aspiration)~drive_wheels + engine_size+ horsepower,family="binomial",data=autot)
+multicar<-multinom(drive_wheels~wheel_base+engine_size,data=autot)
+```
+
+```{r}
+playerstats <- clean_names(read_csv(here("data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+poissonmod2<-glm(goals_overall~minutes_played_overall+position,
+                 data=playerstats[!playerstats$position=="Goalkeeper",],family="poisson")
+poissonmod3<-glm(goals_overall~minutes_played_overall+position,
+                 data=playerstats[!playerstats$position=="Goalkeeper",],family="quasipoisson")
+```
+
+
+# Section 8:  Confidence and prediction intervals
+
+A main difference between statistical methods for data analysis and machine learning methods is the quantification of uncertainty.  When we fit a statistical model to data we have obtained from a sample, we get a set of model coefficients and also model predictions.  But the particular coefficients and predictions we obtain depend on the specific sample we have to work with.  Although we have specific and precise values for our sample, when we want to then make inferences about a larger population from which the sample is drawn, this leads to uncertainty in the estimates of the corresponding values for the whole population.  
+The statistical approach is not to ignore this uncertainty, but instead to estimate it, so we have a good idea of how accurate or reliable our estimates are.  This is done through estimates in the form of intervals rather than numbers.  We can create intervals either for coefficients or predicted responses. We will use new packages for this:  MASS, sandwich and investr.
+
+
+## 8.1:  Confidence intervals for model coefficents
+
+Let's go back to our very first model, of tree diameter as a function of tree height.  
+```{r}
+summary(linmod1)
+```
+
+Recall that the estimates of the coefficients are $b_0=-6.18839$ and $b_1 = 0.25575$.  These are _point estimates_, ie, just a single value without an indication of how sure we are of the numbers.  The (95%) confidence intervals for these can be calculated from the Standard Error estimates in the second column of the table above (Std. Error), but there is also a function that will produce the intervals for you.
+```{r}
+confint(linmod1)
+```
+
+This says that we are not very confident at all of the intercept--given this data, it might range from -17.87 to 5.49.  We are more confident of $b_1$, which we expect should lie between 0.102 and 0.409.  That is, for each additional foot in height, we expect on average between 0.102 and 0.408 inches increase in diameter of black cherry trees.  Generally, the more trees we measure, the better our estimate becomes, that is, the closer the lower and upper bounds are.
+
+**Exercise:**
+Find the confidence intervals for the coefficients in linmod4 and linmod5 and interpret these in terms of the dataset.
+
+
+Recall that in linmod 3, we found evidence of heteroscedasticity, and in poissonmod, we found evidence of overdispersion.  These violations of assumptions will not affect the point estimates of model coefficients, but they will affect the accuracy of confidence intervals calculated in the usual way.  So we need to account for that using a tool from a new package, "sandwich", which creates "robust" estimates, that is, estimates that still work well when the assumptions are not quite met.
+
+```{r}
+std.err<-  sqrt(diag(vcovHC(poissonmod2,type="HC0")))
+r.est <- cbind(Estimate= coef(poissonmod2), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(poissonmod2)/std.err), lower.tail=FALSE),
+LL = coef(poissonmod2) - 1.96 * std.err,
+UL = coef(poissonmod2) + 1.96 * std.err)
+
+r.est
+```
+
+We can compare the estimates we got here with the ones we get using the standard method:
+```{r}
+confint(poissonmod2)
+```
+
+Notice that the confidence intervals we calculate taking into account the inaccurate assumptions are wider (less confident) than the ones we got making the (incorrect) assumptions.  For example, for mean additional goals for a Forward as compared to a Defender, the standard method estimates between 1.99 and 2.38, whereas the robust method estimates between 1.95 and 2.42.  This makes sense--if we build a model on (somewhat) incorrect assumptions we would expect to be less confident about its results than if the assumptions were correct.
+
+**Exercise** calculate the robust confidence intervals for linmod3 and interpret in terms of the dataset.
+
+## 8.2:  Confidence and prediction intervals for responses in linear regression
+
+Recall that what we predict in a glm is the value of the mean, $E(Y;{\bf(x)})$, of the response variable, $Y$ for each combination of predictors, ${\bf(x)}$.  Given the uncertainty in the estimates of the coefficients used to predict this, we naturally also get a level of uncertainty in the predicted value of $E(Y;{\bf(x)})$.  When we have just one continuous predictor in a Gaussian model (simple linear regression), as we do in linmod1, we can picture this uncertainty using a confidence band around the regression line using a quick command in ggplot.
+```{r}
+ggplot(trees2,aes(x=Height,y=Diameter))+
+         geom_point(color=2,size=2)+
+         geom_smooth(method=lm, color='#2C3E50')
+```
+The grey band around the black regression line here is the _confidence band_.  Basically, we are saying that although we have calculated the coefficients in the model to give us the black line, the data we observed could also have reasonably come from any other regression line that fits inside that grey region, such as any of the dotted lines below:
+```{r}
+ggplot(trees2,aes(x=Height,y=Diameter))+
+         geom_point(color=2,size=2)+
+         geom_smooth(method=lm, color='#2C3E50')+
+         geom_abline(intercept=-7.188,slope =0.256,col=3,lwd=0.5,lty=2)+
+         geom_abline(intercept=-5.188,slope =0.256,col=4,lwd=0.5,lty=2)+
+         geom_abline(intercept=-17,slope=0.4,col=5,lwd=0.5,lty=2)+
+         geom_abline(intercept=5.8,slope=0.1,lwd=0.5,lty=2,col=6)
+```
+
+We can make two observations about the confidence band.  
+
+1. First of all, it is wider at the ends than in the middle of the range of Height.  This will always be true, because we have more information about values of Height around the middle than around the end.  
+
+2. Second, notice that most of the points are not in the grey band--that is because a confidence band represents the uncertainty around the _mean_ at each Height, not the range of likely _predicted values_ at each Height.  
+
+If we want a range that most observations should be in, we want instead to use a _prediction band_.  The prediction band will take account both of the uncertainty in the estimate of the mean and the variance in the residuals, ie, the value of the hidden variable $\sigma$.  
+
+We can add a _prediction band_ as a pair of dashed red lines for simple linear regression as follows:
+```{r}
+linmod1a<-lm(Diameter~Height,data=trees2)  #create model using lm instead of glm
+pred1<-predict(linmod1a,interval="prediction") #compute prediction bands
+mytrees<-cbind(trees2,pred1)           #add prediction bands to dataset
+ggplot(mytrees,aes(Height,Diameter))+
+        geom_point(color=2,size=2)+
+         geom_smooth(method=lm, color='#2C3E50')+
+         geom_line(aes(y=lwr), color=2,lty=2)+
+         geom_line(aes(y=upr), color=2,lty=2)
+```
+
+Note that to do this we had to use the function lm instead of glm.  
+
+If your model had problems with heteroscedasticity, ideally you would want to take account of this in your confidence and prediction intervals for the response variable.  Unfortunately, the sandwich method only works for robust regression for confidence intervals for coefficients.  Instead, you would need to use weighted regression (as linked in Section 3.2), then compute associated confidence and prediction intervals for the response.  You can read an example [here](https://stats.stackexchange.com/questions/186953/calculating-prediction-intervals-from-heteroscedastic-data/186956#186956)
+
+When we have more than one predictor variable in a Gaussian family model (multiple linear regression), we can't create nice plots like this because we would need more than two dimensions. But we can still get both confidence and prediction intervals for new cases using the predict command.  Recall linmod4, which predicted highway mpg for cars based on width, weight, fuel and body type.  If we want to predict the mean highway mpg for a 71" wide, 2600 lb, gas sedan, we use:
+```{r}
+linmod4a<-lm(highway_mpg~width+curb_weight+fuel_type+body_style,data=autot)
+predict(linmod4a,newdata=data.frame(width=71,curb_weight=2600,fuel_type="gas",body_style="sedan"),interval="confidence")
+```
+
+And if we want to predict an interval we think most such cars' highway mpg will fall into, we use:
+```{r}
+predict(linmod4a,newdata=data.frame(width=71,curb_weight=2600,fuel_type="gas",body_style="sedan"),interval="prediction")
+```
+
+Note as in the graphs, the predicted value (fit) is the same for both, but the prediction interval is larger than the confidence interval.
+
+## 8.3:  Confidence intervals for responses in glm
+
+The concept of confidence intervals for the response extends from Gaussian family (linear) models to glm (generalised linear models), but not prediction intervals.  This is because it doesn't really make sense to talk about intervals when we have discrete outcomes, as in logistic, multinomial or Poisson regression--we are more interested in the uncertainties around predicted probabilities of each possible outcome, which is what the confidence intervals indicate.
+
+### 8.3.1: Response intervals for logistic regression
+
+Let's consider a simple logistic regression model with a single covariate:
+```{r}
+logmodel<- glm(as.factor(fuel_type)~highway_mpg,family="binomial",data=autot)
+summary(logmodel)
+```
+
+We can picture the results of this regression by plotting the probability of the fuel type being gas as predicted by the model against the actual fuel types of vehicles in the dataset (the central curve), and the uncertainty around this estimate of probabilities by the grey band (the confidence band).
+```{r}
+ilink <-family(logmodel)$linkinv
+newmpg<-with(autot,data.frame(highway_mpg=seq(min(autot$highway_mpg),max(autot$highway_mpg),length=100)))
+newmpg<- cbind(newmpg,predict(logmodel,newmpg,type="link",se.fit=TRUE)[1:2])
+newmpg<-transform(newmpg,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+ggplot(autot, aes(x=highway_mpg,y=as.numeric(as.factor(fuel_type))-1 ))+
+  geom_ribbon(data = newmpg, aes(ymin = Lower, ymax = Upper, x = highway_mpg),
+                fill = "steelblue2", alpha = 0.2, inherit.aes = FALSE) +
+      geom_line(data = newmpg, aes(y = Fitted, x = highway_mpg)) +
+    geom_point()+
+    labs(y = "Probability of gas fuel", x = "Highway mpg")
+```
+
+More generally, for any logistic model we can obtain a confidence interval around the probability of "success" using the following (here implemented for the model linmod5).  We obtain the lower end of the confidence interval, the fit value and the upper end.  So for a fwd car with a 140 L engine and 130 horsepower, we estimate between 13% and 36% probability that the aspiration is turbo.   
+```{r}
+ci5<-predict(linmod5,newdata = data.frame(drive_wheels="fwd",engine_size=140, horsepower=130 ),type="link",se.fit=TRUE)
+c(family(logmodel)$linkinv(ci5$fit-1.96*ci5$se.fit),family(logmodel)$linkinv(ci5$fit),family(logmodel)$linkinv(ci5$fit+1.96*ci5$se.fit))
+```
+
+### 8.3.2: Response intervals for multinomial regression
+
+There is unfortunately not yet a built-in R package for computing confidence intervals around the response probabilities in multinomial regression models.  However, we can get a sense of these using the 'effects' package.
+
+Recall the multicar model:
+```{r}
+multicar$call
+```
+This has two predictors.  We can use the effects function to visualise for each predictor at a time, how the range of predicted probabilities for each class changes as that predictor changes:
+```{r}
+multieff<-Effect("wheel_base",multicar)
+plot(multieff)
+```
+```{r}
+multieff2<-Effect("engine_size",multicar)
+plot(multieff2)
+```
+Here we have a probability curve plotted for each possible outcome, where these curves for each value of the predictors must add to 1, and ranges some interval between 0 and 1 (they will go from 0 to 1 for logistic, ie, only two outcome classes).  The light blue band indicates the uncertainty in the estimated proportion for a given value of the named predictor and the mean value of the other predictor.  For more details, see p. 5 of [this paper](https://www.jstatsoft.org/article/view/v032i01)
+
+
+### 8.3.3: Response intervals for poisson regression
+
+Fortunately, this one is simpler again, since it uses the **glm** function instead of **multinom**.  The technique is basically exactly the same as for logistic regression.  
+
+Recall the Poisson models we constructed for number of goals scored by Premier League forwards, midfielders and defenders with predictors number of minutes played and position.  We had one model using Poisson regression (poissonmod2) and one using quasipoisson regression (poissonmod3).  
+```{r}
+summary(poissonmod3)
+```
+If we want to get an interval prediction for the mean number of goals scored by  players with new information (eg a midfielder who played 1125 minutes), we can do this as above for logistic regression for both the Poisson models as follows:
+
+```{r}
+cip2<-predict(poissonmod2,newdata = data.frame(minutes_played_overall=1125,position="Midfielder" ),type="link",se.fit=TRUE)
+c(family(poissonmod2)$linkinv(cip2$fit-1.96*cip2$se.fit),family(poissonmod2)$linkinv(cip2$fit),family(poissonmod2)$linkinv(cip2$fit+1.96*cip2$se.fit))
+```
+So this predicts that if we looked at several midfielders who all played for 1125 minutes, we would anticipate their average number of goals scored to fall between 0.83 and 1.06.
+
+Compare this to the interval for the quasipoisson model:
+```{r}
+cip3<-predict(poissonmod3,newdata = data.frame(minutes_played_overall=1125,position="Midfielder" ),type="link",se.fit=TRUE)
+c(family(poissonmod3)$linkinv(cip3$fit-1.96*cip3$se.fit),family(poissonmod3)$linkinv(cip3$fit),family(poissonmod3)$linkinv(cip3$fit+1.96*cip3$se.fit))
+```
+Notice that this interval is larger.  This is because the first model makes the not quite precise assumption that variance=mean. If we relax this assumption, we have fit a model with more dispersion, consequently a larger predicted range.  Recall that the overdispersion wasn't huge--we see this in the fact that the interval isn't that much bigger--just about 35% bigger.  Nevertheless, the second model will give us a more conservative range of possible values.
+```{r}
+(1.1104046-0.7904905)/(1.0631666-0.8256132)
+```
+
+We can also create plots for each level of player separately for either model.  I will just do this for forwards in the quasipoisson model, but you can try the other positions and the Poisson model yourself.
+
+```{r}
+ilink <-family(poissonmod3)$linkinv
+newFS<-with(playerstats,data.frame(minutes_played_overall=seq(min(playerstats$minutes_played_overall),max(playerstats$minutes_played_overall),length=100),position="Forward"))
+newFS<- cbind(newFS,predict(poissonmod3,newFS,type="link",se.fit=TRUE)[1:2])
+newFS<-transform(newFS,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+ggplot(playerstats, aes(x=minutes_played_overall,y=goals_overall ))+
+  geom_ribbon(data = newFS, aes(ymin = Lower, ymax = Upper, x = minutes_played_overall),
+                fill = "steelblue2", alpha = 0.2, inherit.aes = FALSE) +
+      geom_line(data = newFS, aes(y = Fitted, x = minutes_played_overall)) +
+    geom_point()+
+    labs(y = "Average total goals", x = "minutes_played_overall")
+
+```
+
+This looks like an overestimate, but I think this is due to overlapping of points.  We can compare to average number of goals made by forwards who have played in certain bins of time (100 minute intervals).
+
+```{r}
+playerstats <- playerstats %>% mutate(minrange=100*round(minutes_played_overall/100)) %>%
+                              mutate(minrangef = as.factor(minrange))
+```
+
+```{r}
+meansby100<-playerstats %>% group_by(position,minrangef) %>% summarise(mean(goals_overall)) %>%
+  mutate(minrange = as.numeric(minrangef))
+```
+```{r}
+meansby100 %>% filter(position=="Forward") %>%
+ggplot(aes(x=minrange,y=`mean(goals_overall)` ))+
+  geom_point() + 
+  geom_ribbon(data = newFS, aes(ymin = Lower, ymax = Upper, x = minutes_played_overall/100),
+                fill = "steelblue2", alpha = 0.2, inherit.aes = FALSE) +
+      geom_line(data = newFS, aes(y = Fitted, x = minutes_played_overall/100)) +
+    labs(y = "Average total goals", x = "minutes_played_overall/100")
+
+```
+
+So this actually looks reasonable, except maybe at the very right.  But also note that there are very few players at the upper levels of minutes, so the mean from the data is likely to be prone to error in that range.
+
+ 

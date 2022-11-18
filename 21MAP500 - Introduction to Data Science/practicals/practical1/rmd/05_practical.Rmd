@@ -1,0 +1,215 @@
+---
+title: "Practical 5"
+author: "Axel Finke"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+
+```{r setup, echo = FALSE, message = FALSE}
+# This is a setup chunk. It reads some global options from the external R
+# script rmarkdown_setup.R which is in the "scripts" folder.
+source(here::here("scripts", "rmarkdown_setup.R"))
+```
+
+
+### 5.0 Exercise
+
+Start a new R notebook named `practical_05.Rmd` and save it to the `rmd` folder of your RStudio project `practicals`. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook.
+
+
+
+
+
+
+### 5.1 Exercise
+
+Include the following code chunk in your notebook and execute it.
+
+```{r, eval = FALSE}
+films <- c(
+  "A New Hope", "The Empire Strikes Back", "Return of the Jedi",  
+  "The Phantom Menace", "Attack of the Clones", "Revenge of the Sith", 
+  "The Force Awakens", "The Last Jedi", "The Rise of Skywalker"
+)
+```
+
+Assume that we have asked five classmates to pick their favourite Star Wars movie (only those listed in `films` should have been an option). We have recorded their answers in the vector `survey_results_2` as follows.
+
+```{r}
+survey_results_2 <- 
+  c("Rogue One", "A New Hope", "The Force Awakens", "A New Hope", "The Empire Strikes Back")
+```
+
+
+a. Create a factor with these modified survey results and `levels = films`. What happens to the first data point in this case?
+
+```{r, echo = FALSE, eval = FALSE}
+factor(survey_results_2, levels = films)
+```
+
+b. Let us assume that "Rogue One" was indeed an option in the survey. Create a factor `z` which takes this into account.
+
+```{r, eval = FALSE, echo = FALSE}
+z <- factor(survey_results_2, levels = c(films, "Rogue One"))
+z
+```
+
+c. Reorder the levels of `z` so that the order reflects the Star Wars chronological order (i.e. Episode I, Episode II, Episode III, Rogue One, Episode IV, ..., Episode IX). 
+
+```{r, eval = FALSE, echo = FALSE}
+z <- factor(survey_results_2, levels = c(films[4:6], "Rogue One", films[c(1:3, 7:9)]))
+
+z <- factor(survey_results_2, levels = c("The Phantom Menace", "Attack of the Clones", "Revenge of the Sith", "Rogue One", "A New Hope", "The Empire Strikes Back", "Return of the Jedi", "The Force Awakens", "The Last Jedi", "The Rise of Skywalker")) # alternative (but more tedious)
+z
+```
+
+d. Ensure that we can easily perform comparisons between the elements of `z`.
+
+```{r, eval = FALSE, echo = FALSE}
+u <- ordered(z, levels = levels(z))
+u[1]
+u[2]
+u[1] < u[2] # checks out: Rogue One comes chronologically before A New Hope
+```
+
+
+### 5.2 Exercise
+
+Consider the following data set of (abbreviated) month names.
+
+```{r}
+months <- c("Feb", "March", "DEC", "Nov", "Mar", "Jul", "Jan", "Jul", "jul")
+```
+
+a. Convert `months` into a factor `z` whose levels are the names of all twelve months plus any other variation/misspelling of a month name found in the vector `months`. (*Tip:* The constants `month.abb` and `month.full` available in R contain the (abbreviated) names of the twelve months of the year).
+
+```{r, eval = FALSE, echo = FALSE}
+# Using abbreviated month names:
+z_abb <- factor(months, levels = unique(c(month.abb, months)))
+
+# Could have used full month names instead:
+z_name <- factor(months, levels = unique(c(month.name, months)))
+```
+
+
+b. Clean up the factor `z` to correct for the variations/misspellings of some of the months,
+
+    i. without using **forcats** functions,
+    
+    ```{r, eval = FALSE, echo = FALSE}
+    # Short simple version
+    levels(z_abb) <- c(month.abb, "Mar", "Dec", "Jul")
+    # and similarly with full month names
+    
+    # Longer and more complicated but more general version 
+    # (because we don't need to know where the misspellings occur)
+    lvl <- levels(z_abb)
+    lvl[lvl == "March"] <- "Mar"
+    lvl[lvl == "jul"] <- "Jul"
+    lvl[lvl == "DEC"] <- "Dec"
+    levels(z_abb) <- lvl
+    # and similarly with full month names
+    ```
+
+    ii. using the package **forcats**.
+    
+    ```{r, eval = FALSE, echo = FALSE}
+    library("forcats")
+    z_abb %>% fct_collapse(
+      "Mar" = "March",
+      "Jul" = "jul",
+      "Dec" = "DEC"
+    )
+    # and similarly with full month names
+    ```
+    
+c. Consider the following character vector.
+
+    ```{r, eval = FALSE}
+    months <- c("January", "December", "March", "March", "December")
+    ```
+    Use the fact that a `factor`s stores its values internally as `integer`s to convert `months` into the numeric representation `c(1, 12, 3, 3, 12)`.
+
+    ```{r, echo = FALSE, eval = FALSE}
+    as.integer(factor(months, levels = month.name))
+    ```
+
+
+### 5.3 Exercise 
+
+Without manually calculating, find out how many seconds have passed between now and the time and day you were born (if you don't know the time-of-day, pick 00:00:00 but make sure to use the right time zone).
+
+```{r, echo = FALSE, eval = FALSE}
+# Assuming I was born in Nairobi on 27 May 1990 at 08:57:00
+time_birth <- as_datetime("1990-05-27 08:57:00", tz = "Africa/Nairobi")
+diff <- as.duration(now() - time_birth) # time difference as a "Duration" object
+paste(diff, "have passed since my birth")
+```
+
+### 5.4 Exercise
+
+You are living in the UK and you have arranged to talk to your parents in Nairobi, Kenya, via Skype/Zoom on 2021-10-10 at 3 pm. But you forgot whether the clock time was meant to be in your time zone or in their time zone. Calculate
+
+a. the clock time in your time zone if the arranged time referred to the clock time in your parents' time zone,
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    mtg_time <- as_datetime("2021-10-10 15:00:00", tz = "Africa/Nairobi")
+    with_tz(mtg_time, tz = "Europe/London")
+    ```
+b. the clock time in your parents' time zone if the arranged time referred to the clock time in your time zone.
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    mtg_time <- as_datetime("2021-10-10 15:00:00", tz = "Europe/London")
+    with_tz(mtg_time, tz = "Africa/Nairobi")
+    ```
+
+
+
+### 5.5 Exercise
+
+Consider again the `starwars` data set.
+
+a. Return a table which contains only the data for those characters whose name includes a "-".
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    starwars %>% 
+      filter(str_detect(name, "-"))
+    ```
+
+b. Return a table in which the names of all characters are abbreviated to the first three letters/numbers.
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    starwars %>% 
+      mutate(name = str_sub(name, start = 1L, end = 3L))
+    ```
+    
+c. Return a table in which each "2" in the name of a character is replaced by "Two".
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    starwars %>% 
+      mutate(name = str_replace_all(name, pattern = "2", replacement = "Two"))
+    ```
+    
+
+### 5.6 Exercise*
+
+Create a tibble with twelve columns, each filled in such a way that the tibble ends up with all twelve different data types mentioned in the table in Section 1.3.2 of Chapter 4.
+
+```{r, echo = FALSE, eval = FALSE}
+df <- tibble(
+  a = c(TRUE, FALSE),
+  b = c(1L, 2L),
+  c = c(sqrt(2), pi),
+  d = c("a", "b"),
+  e = list("a", "b"),
+  f = list(x = "a", y = "b"),
+  g = factor(d), # you can use columns specified earlier
+  h = ordered(d),
+  i = c(today(), today() - 1),
+  j = c(now(), now() - 1),
+  k = c(today() - (i - 1)),
+  l = as.duration(k)
+)
+glimpse(df)
+```
+

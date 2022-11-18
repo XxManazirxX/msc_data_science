@@ -1,0 +1,336 @@
+---
+title: "Generalised Linear Models, 3:  Logistic and Multinomial regression and ROC curves"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("pROC")
+library("nnet")
+```
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+```
+
+
+# Section 5: Logistic models
+
+Just as we can create models in which the predictor variables may be categorical, we can also create models in which the response variable is categorical.  To do this, rather than change the right side of the form of the glm, we change the link function, $g$, and the choice of distributional family, $f$.  
+
+For example, if the response variable has just two possible categories, we will use a link function called _logit_ and the _binomial_ distributional family.  This creates a type of model called a _logistic model_, and the process of fitting it (even though it uses exactly the same overall glm command!) is called _logistic regression_.
+
+## 5.1 Bernoulli trials, the binomial family and the logit link
+Consider if we want to predict X = the aspiration of a car from drive-wheels, engine size and horsepower.  Assume we have a car with all-wheel drive, a 136l engine and 124 horsepower.  The car's aspiration will either be standard or turbo--there are just two possibilities for its aspirations.  So the only parameter we can estimate here is the probability, P(turbo), that it will be turbo.  When a random variable has only two possible responses, it is called a _Bernoulli trial_.  If we assign the value 0 to one response, which we call the _base level_, and the value 1 to the other response (sometimes called a "success"), then the average of the 1s and 0s from some sample is the proportion of successes.  When we consider this as representing a value for a whole population we get that the mean value is equal to the probability of success for that variable, i.e. $E(X)=P(1)$.
+
+The link function we will use is called _logit_, and it is defined as:
+$$
+{\rm logit} (p) = \log\left(\frac{p}{1-p}\right).
+$$
+
+Consider what the graph of this function looks like:
+```{r}
+xseq=seq(0.001,0.999,0.001)
+logitseq=log(xseq/(1-xseq))
+ggplot(
+  data.frame(x=xseq,y=logitseq),aes(x,y))+
+  geom_line()+
+  labs(x = "p", y = "logit(p)") +
+      ggtitle("Graph of logit function") +
+      geom_vline(xintercept=0,lty=2,colour="red")+
+      geom_vline(xintercept=1,lty=2,col="red")+
+      theme_classic()
+```
+
+We can notice that logit is not defined if $p=0$ or if $p=1$--in fact, there are _vertical asymptotes_ in the graph at those two values (where the dashed red lines are).  So in particular, probability values (which are always **between 0 and 1**) are taken to values along the entire real line.  This is necessary, because the right hand side of the model equation:
+$$
+b_0 +b_1\times y_1 + ... + b_k\times y_k,
+$$
+
+can in principle take values equal to **any real number**.  The logit function makes the _link_ between the limited range probability on the left, and the unlimited range linear function on the right.
+
+The model we will fit is:
+$$
+\begin{align}
+{\rm logit}(P({\rm turbo}))
+    =  & {\rm logit} (E(X)) \\ 
+    =  & b_0 + b_1\times {\rm fwd} + b_2\times {\rm rwd} \\
+    & + b_3\times {\rm enginesize} + b_4\times {\rm horsepower}.
+\end{align}
+$$
+
+Note that $P({\rm standard}) = 1 - P({\rm turbo})$ since the probabilities of the two exhaustive and mutually exclusive choices have to add to 1.
+
+
+## 5.2  Fitting a logistic model
+
+Here 4wd is the base level for the factor drive-wheels, so only the other two levels of this variable appear in the equation.  Notice the right hand side of the equation looks just the same as it would if we were predicting, say, curb-weight, a numerical variable rather than aspiration, a categorical one.  The only difference in form is the left hand side where we have chosen $g={\rm logit}$.
+
+Since there is only one parameter in the distribution to estimate (probability of turbo), there are no hidden parameters in this model.  However, the _binomial family_ that is referred to in the R code, $B(m,n)$ includes cases where we are trying to guess about the number of turbo cars from a set $n$ cars with the same other characteristics.  Since we will only care about the probability for a single car at a time, we take $n=1$.  $B(m,1)$ is a _Bernoulli trial with probability $m$ of success_.
+
+We write: 
+$$
+\begin{align}
+{\rm aspiration} \sim B(\mbox{inverse logit}(b_0 &+ b_1\times {\rm fwd} + b_2\times {\rm rwd} \\& + 
+ b_3\times {\rm enginesize} + b_4\times {\rm horsepower}),1),
+\end{align}
+$$
+
+where inverse logit is the inverse function for the function logit, that is, is the thing that undoes logit.
+
+**Exercise** Work out what the inverse logit function is equal to.
+
+To fit a logistic model, we write the following.  Note that glm already knows to use logit as the link from the fact that we have chosen the binomial family:
+```{r}
+linmod5<-glm(as.factor(aspiration)~drive_wheels + engine_size+ horsepower,family="binomial",data=autot)
+linmod5
+```
+
+
+## 5.3 Prediction with logistic models, confusion matrices, ROC curves
+
+Using the **predict** function in R, we can now predict the probability that the car above with all-wheel drive, a 136 l engine and 124 horsepower has turbo aspiration:
+```{r}
+predict(linmod5,newdata=data.frame(drive_wheels="4wd", engine_size = 136, horsepower=124),type="response")
+```
+
+So we expect about a 41% chance that this car would have a turbo aspiration.  If we just want a classification, we would classify it as standard, since the probability of standard would be $1-0.409131 = 0.590869$, or about a 59% chance, which is larger.
+
+We can look at how well our predictive model has done by seeing how well the predictions correspond to the actual values using a _confusion matrix_
+```{r}
+anewdata=autot[is.na(autot$horsepower)==FALSE,]
+anewdata$predasp<-ifelse(predict(linmod5,newdata=anewdata, type="response")>= 0.5,"Turbo","Standard")
+table(anewdata$predasp,as.factor(anewdata$aspiration))
+```
+
+Note that the columns here are the true values and the rows are the predictions.  So although it identified 162/166 standard transmissions correctly, it only identified 2/37 turbos correctly.  So this isn't a great model.  I have to confess, I don't know a great deal about cars!  I expect the model isn't using the predictors that make the most sense.  This is why in real data science it is important to either know something yourself about the domain of inquiry (here, cars), or to work with someone who does!  
+
+However, the fact that standard is better predicted than turbo also relates to the fact that there are so many more standard models than turbo models in the dataset (166 versus 37).  This is a common situation--when one group is much smaller than another, the prediction of a model will be better on the larger group.  This is part of what can cause algorithmic bias in modelling.
+
+For classification problems such as this where you are interested in predicting which of two categories each case fits into, there are various terms we use to describe how well the model works.  If we consider that our goal is to identify turbo aspiration cars, then the proportion of turbo cars we correctly identify is called the _sensitivity_, here 2/37, so quite a low sensitivity.  The proportion of cars that are NOT turbo that are correctly labelled NOT turbo is called the _specificity_, here, 162/166.  So the specificity is pretty good.
+
+A common setting for this is disease testing.  For instance, for a covid-19 test, we want to things:  we want it to correctly identify people who are infected (have good sensitivity), but we also want it to correctly identify people who are not infected (have good specificity).  There is a trade-off between these two.  If we want a test that is 100% sensitive, we can achieve that just by saying everyone is infected!  Of course, then we have 0% specificity.  By the same token, if we want a test that is 100% specific, then we can achieve that by saying nobody is infected, though the test is then 0% sensitive.
+If we just randomly assign each patient either to an infected or non-infected result, we expect about half of each assigments to be correct:  50% sensitivity and 50% specificity.  So without any model at all, we expect sensitivity + specificity=100%.  What we hope from a model is to do better than that!  
+
+Given a logistic regression model, we can shift the balance between sensitivity and specificity by changing the probability threshold at which we give a "positive" result.  So, eg, we could say that even with only a 10% chance that someone is infected, we want them to isolate, so we will label them as "infected", and only give a "non-infected" response when the probability of infection according to our model is <10%.
+
+Okay, so let's try this with our cars.  Let's predict a car to have a turbo aspiration as long as our model gives a probability of at least 30%.  Then the confusion matrix becomes:
+
+```{r}
+anewdata$predasp<-ifelse(predict(linmod5,newdata=anewdata, type="response")>= 0.3,"Turbo","Standard")
+table(anewdata$predasp,anewdata$aspiration)
+```
+
+Notice that now we have labelled some standard transmissions incorrectly as turbo, but we have also gotten more of the turbo models correctly labelled.
+
+With the 0.5 probability cutoff we had:  
+$$
+\begin{align}
+{\rm sensitivity}(0.5) + {\rm specificity}(0.5) = 162/166 + 2/37 = 1.02995766851
+\end{align}
+$$
+
+which is barely greater than the value of 1 we get for free with no model at all.  It is only about a 3% overall improvement in correct classifications.
+
+With the 0.3 probability cutoff we get:
+$$
+\begin{align}
+{\rm sensitivity}(0.3) + {\rm specificity}(0.3) = 152/166 + 11/37 = 1.2129599479,
+\end{align}
+$$
+
+which is about 21% better than with no model.  So this is interesting--the best fitting logistic regression model **does not give the best prediction at a 0.5 cutoff** in general.  
+
+There is a way to explore the best cutoff called using a _Receiver Operating Characteristic_ (ROC) curve.  This plots pairs (sensitivity, specificity) at each probability cutoff.  We can also use this to identify the cutoff that gives the best sum sensitivity+specificity, sometimes called _Youden's index_.  Then we can use that cutoff for predictions on future data.
+
+```{r}
+probturbo<-predict(linmod5,newdata=anewdata, type="response")
+rocturbo<-roc(response=anewdata$aspiration,predictor=probturbo,auc=TRUE)
+ggroc(rocturbo)+
+  geom_abline(aes(intercept=1,slope=1),colour="red")+
+  annotate(geom="text", x=0.25, y=0.25, label=paste("AUC =",round(auc(rocturbo),3) ),colour="blue" )
+```
+
+Now we can find Youden's index and also the maximal sensitivity+specificity we can get from this model.
+```{r}
+youdenturbo<-coords(rocturbo,"b",best.method="youden",transpose=TRUE)
+youdenturbo
+youdenturbo[2]+youdenturbo[3]
+```
+
+So the best threshold is right around 0.2, and this achieves a  sensitivity+specificity of 1.42 on this data instead of the 1 achieved at random.
+
+Another number often used to investigate the quality of a classification model with two classes is the area under the ROC curve (auc), which is =0.5 for a random model and =1 for a perfect model.
+```{r}
+rocturbo$auc
+```
+
+
+# Section 6:  Multinomial models
+
+Multinomial models are similar to logistic models, but are for situations in which you are interested in predicting a categorical variable with more than two levels.  So, for example in the automobile data, if we wanted to predict the drive wheels from the wheel base and the engine size, we would need multinomial regression because there are three different possible levels:  fwd, rwd and 4wd.
+
+One of these levels, 4wd, will be the base level as before.  For each of the other two levels, we get an equation involving the predictor variables as in logistic regression.  So the output of a multinomial model is two equations:  
+
+$$
+{\rm logit}(P({\rm fwd})) = b_{10} + b_{11}\times{\rm  wheelbase} + b_{12}\times {\rm enginesize}
+$$
+
+$$
+{\rm logit}(P({\rm rwd})) = b_{20} + b_{21}\times {\rm wheelbase} + b_{22}\times {\rm enginesize}
+$$
+
+Then 
+$$
+P({\rm 4wd}) = 1-P({\rm fwd})-P({\rm rwd}).
+$$
+
+The multinomial regression method ensures that P(4wd) is always between 0 and 1, which would not necessarily happen if we built the equations as two separate logistic regression models.
+
+Note that whereas when a categorical variable is used as a predictor variable, each level other than the base level creates a new parameter in each equation.  When a categorical variable is used as a reponse variable, each level other than the base level creates a new _equation_.  
+
+## 6.1:  Fitting a multinomial model using "multinom" from the "nnet" package
+
+Fitting a multinomial regression model in R is pretty much the same as fitting other models, except it turns out that the standard glm function doesn't work.  Instead we use a function from a different package, called 'nnet'.
+
+We can fit the model:
+```{r}
+multicar<-multinom(drive_wheels~wheel_base+engine_size,data=autot)
+multicar
+```
+
+
+## 6.2:  Prediction with multinomial models
+
+When we predict using a multinomial model, it assigns each case to the class that has the greatest probability according to the model equations.  So, for example, for the first car in the dataset, the probabilities are:
+```{r}
+predict(multicar,type="probs")[1,]
+```
+
+Since fwd has the greatest probability, if we ask for a classification, we get fwd:
+
+```{r}
+predict(multicar,type="class")[1]
+```
+
+As with logistic regression, we can create a confusion matrix for the classifications that are predicted this way.
+```{r}
+multitable<-table(autot$drive_wheels,predict(multicar,type="class"))
+names(dimnames(multitable))<- list("Actual","Predicted")
+multitable
+```
+
+We can calculate sensitivity and specificity for each category:
+
+* Sensitivity(fwd) = 109/120 = 91%
+* Specificity(fwd) = 60/85 = 71%
+
+* Sensitivity(rwd) = 60/76 = 80%
+* Specificity(rwd) = 118/129 = 91%
+
+* Sensitivity(4wd) = 0/9 = 0%
+* Specificity(4wd) = 196/196 = 100%
+
+This is pretty good, all told.  It hasn't done at all well in predicting 4wd, but this is likely because so few cars at that time were 4wd.
+
+## 6.3:  Adjusting thresholds in multinomial models
+
+Recall that with logistic models, we could change the prediction by changing the probability threshold we use for classification.  In particular, we can set a different threshold, T, for one of the levels, and this gives us a corresponding new threshold 1-T for the other level.  Another way to think of this is that we weight the probabilities we use in computing the maximum probability:
+
+$$
+\mbox{Weighted }P(0) = TP(0) := \omega_0 P(0) \\
+\mbox{Weighted }P(1) = (1-T)P(1) := \omega_1 P(1) 
+$$
+
+**Exercise:** Confirm that Weighted P(1) > Weighted P(0) exactly when P(1) > T.
+
+
+If we want to set new thresholds in our multinomial model, we need to choose three weights, $\omega_1$, $\omega_2$, and $\omega_3$ to weight the three probabilities:
+$$
+\begin{align}
+\mbox{Weighted }P(4wd) &= \omega_1 P(4wd) \\
+\mbox{Weighted }P(fwd) &= \omega_2 P(fwd) \\
+\mbox{Weighted }P(rwd) &= \omega_3 P(rwd).
+\end{align}
+$$
+
+Now as before, we take the maximum of the three adjusted probabilities as the predicted class.
+
+For example, if we want to ramp up the chances of a 4wd prediction, and make rwd a bit more probable, we could let $\omega_1=15$, $\omega_2=1$, and $\omega_3=2$.
+Then we get weighted probabilities:
+```{r}
+newprobs<-predict(multicar,type="probs")*cbind(rep(15,205),rep(1,205),rep(2,205))
+head(newprobs,10)
+```
+
+This gives corresponding new predictions
+```{r}
+newpred<-ifelse(apply(newprobs,1,which.max)==1,"4wd",
+                ifelse(apply(newprobs,1,which.max)==2,"fwd","rwd"                        )
+                )
+head(newpred,n=10)
+```
+
+We can create a new confusion matrix:
+```{r}
+newmultitable<-table(autot$drive_wheels,newpred)
+names(dimnames(newmultitable))<- list("Actual","New Predicted")
+newmultitable
+```
+
+So now we do much better identifying 4wd and marginally better on rwd, but much worse on fwd.  
+
+How do we find the "best threshold"?  ROC curves only make sense when we have just two classes.  But instead of maximizing sensitivity + specificity for a single class, we can instead maximise the sum of sensitivities over all classes:
+
+
+$$
+{\rm SSens} = \sum_{j \in levels} {\rm Sensitivity}(j).
+$$
+
+We can get this from the confusion matrix by the following:
+```{r}
+SSens <- newmultitable[1,1]/sum(autot$drive=="4wd") +
+  newmultitable[2,2]/sum(autot$drive=="fwd")+
+  newmultitable[3,3]/sum(autot$drive=="rwd")
+SSens
+```
+
+
+**Exercise:**  Check that this is the same as the sum of sensitivity + specificity when there are two classes.  
+
+We may also just care about the best overall number of correct classifications, regardless of which group they are in (note that if one group is much larger than the others, this may occur by simply putting everything into that group!).  This is the _correct classification rate_, which will be between 0 and 1.
+
+```{r}
+CCR <- (newmultitable[1,1]+newmultitable[2,2]+newmultitable[3,3])/length(autot$drive)
+CCR
+```
+
+We can optimse the weights to maximise either of these objectives.  Maximising SSens will give us the 3-class Youden index, which will be a set of weights, up to a constant multiple.
+There is not an R command that does that, but you can play around with values.
+
+

@@ -1,0 +1,21 @@
+"0","nasa_ice <- read_delim(here(""data"",""nasa_arctic_sea_ice.csv""),"
+"0","    delim = "";"")"
+"1","[1m[1mRows: [1m[22m[34m[34m42[34m[39m [1m[1mColumns: [1m[22m[34m[34m6[34m[39m
+"
+"1","[36m--[39m [1m[1mColumn specification[1m[22m [36m------------------------[39m
+[1mDelimiter:[22m "";""
+[31mchr[39m (5):  mo,     data-type,  region,  exten...
+[32mdbl[39m (1): year
+"
+"1","
+[36mi[39m Use [38;5;251m[48;5;235m[38;5;251m[48;5;235m`spec()`[48;5;235m[38;5;251m[49m[39m to retrieve the full column specification for this data.
+[36mi[39m Specify the column types or set [38;5;251m[48;5;235m[38;5;251m[48;5;235m`show_col_types = FALSE`[48;5;235m[38;5;251m[49m[39m to quiet this message.
+"
+"0","nasa_ice <- nasa_ice %>%"
+"0","  clean_names() %>%"
+"0","  select(year, extent) %>%"
+"0","  rename(date = year, ice = extent)%>%"
+"0","   mutate(date =parse_date_time(date, orders =""01/01/%Y"" )) %>%"
+"0","  mutate(date = as.Date.character(date, format = ""%Y-%m-%d""))"
+"0",""
+"0",""

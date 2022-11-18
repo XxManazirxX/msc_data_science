@@ -1,0 +1,9 @@
+"0","linmod1 %>%"
+"0","  gg_diagnose(max.per.page = 1)"
+"2","`stat_bin()` using `bins = 30`. Pick better value
+with `binwidth`.
+"
+"2","`geom_smooth()` using formula 'y ~ x'
+"
+"2","`geom_smooth()` using formula 'y ~ x'
+"

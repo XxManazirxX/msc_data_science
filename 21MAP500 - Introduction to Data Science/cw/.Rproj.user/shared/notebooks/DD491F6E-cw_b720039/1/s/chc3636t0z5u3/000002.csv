@@ -1,0 +1,8 @@
+"0","nasa_ice %>%"
+"0","  ggplot(mapping = aes(x = date, y =ice)) +"
+"0","  geom_point()+"
+"0","  labs("
+"0","  caption = ""nasa_ice"","
+"0","  x = ""Date"","
+"0","  y = ""minimum arctic sea ice extent in million square km."""
+"0","  )"

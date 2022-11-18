@@ -1,0 +1,378 @@
+---
+title: "21MAP500 Coursework"
+author: "Manazir - B720039"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update:
+  `r format(Sys.time(), '%d %B')`"
+---
+
+```{r, echo=F, message=F }
+library("here")
+library("tidyverse")
+library("readxl")
+library("janitor")
+library("lubridate")
+library("lintr")
+library("RColorBrewer")
+```
+
+## Question 1
+### 1a)
+
+
+```{r, echo=F, message= F}
+nasa_temp <- read_table(here("data", "nasa_global_temperature.txt"),
+  col_names = F,
+  skip = 5
+)
+# skips all irrelevant lines
+nasa_temp <- clean_names(nasa_temp)
+
+colnames(nasa_temp) <- c("date", "temp", "z")
+# change column names
+
+nasa_temp <- nasa_temp %>%
+  clean_names() %>%
+  select(date, temp) %>%
+  # eradicates unwanted column
+  mutate(date = parse_date_time(date, orders = "%Y-01-01")) %>%
+  mutate(date = as.Date.character(date, format = "%Y-%m-%d"))
+
+
+# converts year, to full date format
+```
+
+```{r, echo = F, message = F}
+nasa_temp %>%
+  ggplot(mapping = aes(x = date, y = temp)) +
+  geom_line() +
+  labs(
+    caption = "nasa_temp",
+    x = "Date",
+    y = "average temperature in °C."
+  ) +
+  theme_classic()
+# ploting a line graph, with labeled axis
+```
+
+### 1b)
+
+```{r, echo=F, message=F}
+nasa_ice <- read_delim(here("data", "nasa_arctic_sea_ice.csv"),
+  delim = ";"
+)
+nasa_ice <- nasa_ice %>%
+  clean_names() %>%
+  select(year, extent) %>% # narrwoing down data
+  rename(date = year, ice = extent) %>%
+  mutate(date = parse_date_time(date, orders = "01/01/%Y")) %>%
+  mutate(date = as.Date.character(date, format = "%Y-%m-%d")) # changing date format and type to date character
+```
+
+
+```{r, echo = F, message = F, fig.height= 7, fig.width= 5}
+nasa_ice %>%
+  ggplot(mapping = aes(x = date, y = ice)) +
+  geom_point() +
+  labs(
+    caption = "nasa_ice",
+    x = "Date",
+    y = "minimum arctic sea ice extent in million square km."
+  ) +
+  theme_classic()
+# labeling the caption and the x and y axis
+```
+
+
+### 1c)
+
+```{r, echo=F, message= F}
+nasa_sea <- read_table(here("data", "nasa_sea_level.csv"),
+  skip = 48,
+  na = "NA",
+  col_names = F # no column name, so i can create my own
+)
+
+colnames(nasa_sea)[3] <- "date"
+colnames(nasa_sea)[12] <- "sea"
+# renaming of the required columns
+nasa_sea <- nasa_sea %>%
+  clean_names() %>%
+  select(date, sea) %>%
+  mutate(date = format(date_decimal(date), "%Y-%m-%d")) %>%
+  mutate(date = as.Date.character(date, format = "%Y-%m-%d"))
+
+# converts decimal to proper year and to type date
+```
+
+
+```{r, echo = F, message = F, fig.height= 5, fig.width= 5}
+nasa_sea %>%
+  ggplot(mapping = aes(x = date, y = sea)) +
+  geom_line() +
+  labs(
+    caption = "nasa_sea",
+    x = "Date",
+    y = "change in sea level compared to a reference year in mm."
+  ) +
+  theme_classic()
+```
+
+
+### 1d)
+
+```{r, echo=F, message=F}
+nasa_co2 <- read_table(here("data", "nasa_carbon_dioxide.txt"),
+  skip = 53, # skips all unwanted data
+  col_names = F,
+)
+
+colnames(nasa_co2)[3] <- "date"
+colnames(nasa_co2)[4] <- "co2"
+# renaming the column headings to suggested names
+
+nasa_co2 <- nasa_co2 %>%
+  filter(co2 > 0) %>%
+  clean_names() %>%
+  select(date, co2) %>%
+  mutate(date = format(date_decimal(date), "%Y-%m-01")) %>%
+  mutate(date = as.Date.character(date, format = "%Y-%m-%d"))
+```
+
+
+```{r, echo = F, message = F, fig.height= 5, fig.width= 5}
+nasa_co2 %>%
+  ggplot(mapping = aes(x = date, y = co2)) +
+  geom_line() +
+  labs(
+    caption = "nasa_co2",
+    x = "Date",
+    y = "average global CO2 level in parts per million (ppm)."
+  ) +
+  theme_classic()
+```
+
+
+
+```{r, echo=F, message=F}
+nasa <-
+  nasa_temp %>%
+  full_join(nasa_ice,
+    keep = F,
+    by = "date"
+  ) %>%
+  full_join(nasa_sea,
+    keep = F,
+    by = "date"
+  ) %>%
+  full_join(nasa_co2,
+    keep = F,
+    by = "date"
+  ) # full join, keeps all data, and joined by common data i.e "date"
+```
+
+
+```{r, echo=F, fig.height=5, fig.width=10}
+nasa %>%
+  mutate(date = format(date, format = "%Y")) %>%
+  filter(date >= 1960 & date <= 2020) %>% # gives range from 1960-2020
+  group_by(date) %>%
+  select(date, temp, co2) %>% # selects the required outputs
+  na.omit() %>% # rids of any data with NA
+  ggplot(mapping = aes(x = co2, y = temp, colour = date)) +
+  geom_point(size = 2, alpha = 0.5, show.legend = T) +
+  labs( # size increased for visibility,colour done according to date
+    title = "Corelation between co2 and temp",
+    x = "average global CO2 level in parts per million (ppm)",
+    y = "average temperature across global land and ocean surfaces in °C",
+    colour = "Year"
+  ) +
+  theme_classic()
+```
+
+
+## Question 2
+
+### 2a)
+
+
+```{r echo=F, message=FALSE}
+historic_co2 <- read_table(here("data", "luthi_carbon_dioxide.txt"),
+  skip = 774,
+  col_names = c("yrbp", "co2")
+)
+
+historic_co2 <- historic_co2 %>%
+  mutate(yrbp = yrbp + 13) # add 13 years to the original year
+
+nasa_co2 <- nasa_co2 %>%
+  mutate(yrbp = year(today()) - year(nasa_co2$date))
+# substracts current year from year of recorded data
+```
+
+
+### 2b)
+```{r, echo=F, message=F}
+
+combine_co2 <-
+  nasa_co2 %>%
+  select(yrbp, co2) %>%
+  full_join(historic_co2,
+    keep = F,
+    by = c("yrbp", "co2")
+  ) %>%
+  group_by(yrbp) %>%
+  summarise(co2 = mean(co2, na.rm = T)) # mean value calculated
+```
+
+### 2c)
+
+```{r, echo=F, message=F}
+combine_co2 %>%
+  ggplot(mapping = aes(x = yrbp, y = co2)) +
+  geom_line() +
+  labs(
+    x = "Years before present",
+    y = " Carbon dioxide [ppm]"
+  ) +
+  scale_x_reverse() # flips the x axis
+```
+
+## Question 3
+
+### 3a)
+
+```{r, echo= F, message=F}
+sea_ice_1 <- read_xlsx(here("data", "nsidc_sea_ice_daily_extent.xlsx"))
+
+colnames(sea_ice_1)[1] <- "month"
+colnames(sea_ice_1)[2] <- "day"
+sea_ice_1 <- sea_ice_1[, -c(47:49)] %>%
+  # getting rid of unwanted columns at the end
+  remove_empty() %>%
+  tidyr::fill(month, .direction = "down") %>%
+  # fills in gap with previous month value
+  mutate(month = parse_date_time(month, orders = "01/%m/01")) %>%
+  mutate(month = month(month)) %>% # change display to only months
+
+  pivot_longer(
+    cols = !c(1, 2),
+    names_to = "year",
+    values_to = "extent"
+  )
+# creating year column with this command and putting extent value to match it
+```
+
+### 3b) I had a go but I'm confused to what should be divided by what so I have commented this section
+
+```{r, echo= F}
+# sea_ice_2 <- tibble( sea_ice_1)
+#
+# sea_ice_2 <- sea_ice_2 %>%
+#   group_by(year, month) %>%
+#   summarise( proportion_base_extent = mean(extent, na.rm= T))
+#
+#
+# sea_ice_avg <- sea_ice_2 %>%
+#   filter(year == 1979) %>%
+#   group_by(year) %>%
+#   summarise(x_avg = mean(proportion_base_extent, na.rm =T))
+#
+# sea_ice_2 <- sea_ice_2 %>%
+#   mutate(proportion_base_extent = proportion_base_extent/sea_ice_avg$x_avg)
+```
+
+### 3c)
+
+
+```{r, echo=F, fig.height= 3, fig.width=6}       
+sea_ice_2 <- read.csv(
+  file = here("data", "sea_ice_2.csv")
+)
+
+sea_ice_2 %>%
+  mutate(month = month(month, label = T, abbr = F)) %>%
+  ggplot(mapping = aes(x = year, y = month, fill = proportion_baseline_extent)) +
+  geom_tile(alpha = 0.9) + # plots tile chart with transparency
+
+  labs(
+    title = "Sea ice (northern hemisphere)",
+    x = "Year",
+    y = "Month"
+  ) +
+  scale_fill_distiller("Proportion of 1979 extent", palette = "RdPu") +
+  theme_classic()
+# labels legend, and gives required colour
+```
+
+
+## Question 4
+
+### 4c/d)
+```{r, echo= F, message=F}
+
+stop_search_2 <- read.csv(
+  file = here("data", "stop_search_2.csv")
+)
+```
+
+#### 1 - How does the stop search rates compare between all different ethnicity every year?
+
+This figure shows how rate of stop/search has been performed through out the years, the different ethnicity are displayed by the different colours.
+
+```{r, echo= F, warning=F, fig.height= 5, fig.width= 10}
+stop_search_2 %>%
+  clean_names() %>%
+  group_by(year, ethnicity) %>%
+  ggplot(mapping = aes(x = year, y = rate, fill = ethnicity)) +
+  geom_col(alpha = 0.8) +
+  labs(
+    title = "Stop/search rate over the years by ethnic distribution",
+    x = "Year",
+    y = "Rate of stop",
+    colour = "Ethnicity"
+  ) +
+  theme_classic()
+```
+
+#### 2 - During 2019/20 which group sufferes most from white disparity?
+
+Graph shows how all ethnic groups suffer from white disparity. Shows population densities of the ethnic groups and the rate of stops and white disparty suffering. 
+
+```{r, echo= F, warning=F, fig.height= 4, fig.width= 6}
+stop_search_2 %>%
+  filter(year == "2019/20" & !ethnicity == "All") %>%
+  group_by(ethnicity) %>%
+  ggplot(mapping = aes(x = relative_disparity, y = rate, colour = ethnicity, size = population)) +
+  geom_point(alpha = 0.6) +
+  theme_classic() +
+  labs(
+    title = "Disparity between ethnic groups in 2019/2020",
+    x = "Relative disparity",
+    y = "Rate of stop",
+    size = "Population",
+    colour = "Ethnicity"
+  ) +
+  scale_colour_brewer(palette = "Set2")
+```
+
+#### 3- How does ethnicity stop/search compare under different legistalions?
+
+This figure shows, percentage comparison of different ethnicity under different legislation being stopped.
+
+
+```{r, echo= F, warning=F, fig.width= 6}
+stop_search_2 %>%
+  filter(!legislation_type == "All" & !ethnicity == "All") %>%
+  group_by(ethnicity, legislation_type, year) %>%
+  ggplot(mapping = aes(x = rate, y = legislation_type, fill = ethnicity)) +
+  geom_col(position = position_fill(), alpha = 0.8) +
+  theme_classic() +
+  labs(
+    title = "Comparison of rate of stops of
+    diffrent ethnicity under different legisaltions",
+    x = "Rate (as percentage)",
+    y = "Legislation Type",
+    colour = "Ethnicity"
+  ) +
+  scale_colour_brewer(palette = "Accent")
+```

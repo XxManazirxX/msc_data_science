@@ -1,0 +1,24 @@
+---
+title: "21MAP500 Coursework"
+author: "Manazir - B720039"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+```{r, echo= F}
+library("here")
+library("tidyverse")
+library("lintr")
+library("janitor")
+library("lubridate")
+
+```
+
+## Question 1: [22]
+### a.
+```{r, echo=F, eval = F}
+nasa_temp <- read.delim(
+  file = here("data","nasa_global_temperature.txt" )
+)
+
+```
+

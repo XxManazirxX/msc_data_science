@@ -1,0 +1,6 @@
+"0","Pl_players %>%"
+"0","  ggplot(aes(minutes_played_overall, goals_overall, colour = position)) +"
+"0","  geom_point()+"
+"0","  labs(x = ""Minutes Played"", y = ""Goals Scored"") +"
+"0","  ggtitle(""Minutes played versus Goals Scored"") +"
+"0","  theme_classic()"

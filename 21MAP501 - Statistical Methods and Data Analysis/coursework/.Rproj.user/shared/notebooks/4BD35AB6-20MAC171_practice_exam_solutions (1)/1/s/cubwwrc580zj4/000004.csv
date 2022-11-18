@@ -1,0 +1,2 @@
+"0","garagecars<-as.vector(Ames2$Garage_Cars)"
+"0","Amespredict<-model.matrix(~.-1,Ames2[,-c(60,80:81)])"

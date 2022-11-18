@@ -1,0 +1,92 @@
+---
+title: "Practical 4"
+aurthor: "Manazir"
+output: html_notebook
+---
+
+```{r}
+library("tidyverse")
+```
+
+```{r, eval=F, echo=F}
+starwars %>% glimpse()
+
+```
+
+```{r, eval=F, echo=F}
+# starwars[[19, "height"]]
+# starwars[19, "height"] %>% unlist() matrix format
+
+# starwars$height[19] list format
+
+# starwars %>%
+#   filter(name == "Yoda") %>%
+#   pull(height) dplyr verb
+
+
+```
+
+###4.2 
+
+```{r, eval=F, echo=F}
+# starwars %>% arrange(name)
+# starwars %>% arrange(species, name)
+
+# starwars %>%
+#   filter(homeworld == "Tatooine" | is.na (homeworld)) %>%
+#   nrow()
+
+# starwars %>% select(name | contains("color"))
+
+# starwars %>%
+#   filter(sex =="female") %>%
+#   group_by(species) %>%
+#   summarise(avg_female_height = mean(height, na.rm=T))
+
+# starwars %>%
+#   group_by(species, eye_color) %>%
+#   summarise(n =n()) %>%
+#   mutate(frequency( = n / sum(n)) %>%
+#            select(-n) %>%
+#            arrange( species)
+         
+# starwars %>%
+#   group_by(species) %>%
+#   summarise( min_height = min(height, na.rm=F), max_height = max(height, na.rm=F)) %>%
+#   mutate( range_height= max_height - min_height,) %>%
+#   select (-c(min_height, max_height))
+
+# starwars %>%
+#   select( name, height, species) %>%
+#   mutate(rel_height = height / mean(height, na.rm=T))
+
+# starwars%>%
+#   select(name, mass, species) %>%
+#   group_by(species) %>%
+#   mutate(rel_height= mass/ mean(mass, na.rm=T))
+
+# 
+# starwars %>%
+#   select(where(is.character) | where(is.list))
+
+breaks <- c(0, 100, 170, 200, Inf)
+labels <- c( "very short", "short", "average", "tall")   
+# starwars %>%
+#   mutate(height_category = case_when(
+#     is.na(height) ~ NA_character_,
+#     height <= breaks[2] ~ labels[1],
+#     height <= breaks[3] ~ labels[2],
+#     height <= breaks[4] ~ labels[3],
+#     T ~ labels[4]
+#   )
+#   )%>%
+#   group_by(height_category) %>%
+#   summarise((no_of_characters = n ())
+#             
+            
+starwars %>%
+  group_by(hieght_group = cut(height, breaks = breaks, labels= labels)) %>%
+  summarise(no_of_characters = n())
+
+```
+

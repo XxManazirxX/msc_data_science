@@ -1,0 +1,2 @@
+"0","clean_comic_characters <- comic_characters %>%"
+"0","  drop_na()"

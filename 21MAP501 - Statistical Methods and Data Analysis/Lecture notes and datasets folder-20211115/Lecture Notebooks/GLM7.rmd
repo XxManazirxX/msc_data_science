@@ -1,0 +1,253 @@
+---
+title: "Generalised Linear Models, 7:  Random effects and mixed models"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+
+```{r, message = FALSE,comment=FALSE}
+library("rio")
+library("magrittr")
+library("here")
+library("janitor")
+library("pROC")
+library("AmesHousing")
+library("tidyverse")
+library("rcompanion")
+library("lme4")
+library("merTools")
+```
+```{r}
+ames<-make_ames()
+amesresidential<-ames %>% filter(!(ames$MS_Zoning %in% c("A_agr","C_all","I_all"))) %>%
+                         droplevels()
+```
+```{r}
+playerstats <- clean_names(read_csv(here("data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+nongkstats<-playerstats %>% filter(position !="Goalkeeper") %>%
+                            droplevels()
+```
+
+# Section 11:  Random effects and mixed models
+
+Recall last week we discussed how to count the number of parameters in a model.  And we saw that a factor with k levels introduces k-1 parameters.  When k is not large, eg, say, 5 for less, then this isn't a huge problem.  But frequently we have situations in which k is much larger.  For example, in the AmesHousing dataset, for the factor "Neighborhood", there are 28 levels.  In the playerstats dataset, the factor "club" has 20 levels.  These are important predictors of sale price and of player performance, so we would like to include them in models, but we need a way to reduce the number of parameters they require.  A very good way to do this is to include them as _random effects_.
+
+Recall that the general form of a generalised linear model is:
+$$
+g(E(X;{\bf y})) = b_0 +b_1 y_1 + ... + b_k y_k,
+$$
+where ${\bf y} = y_1, ... , y_k$ are the predictors and $X$ is the response.  When we introduce a random effect in a glm, we add a term $U$ to the right hand size which we assume itself is a random variable.  Each level of the factor replaced by a random effect is associated to a random draw from of the variable $U$ that represents the effect that that level has on the outcome, $X$.  
+
+We generally assume that $U \sim N(0,\tau)$.  Note that we can always take the expected value of $U$ to equal 0 by assuming any non-zero expected value is rolled into the parameter $b_0$.  When we replace a factor by a random effect, we go from having k-1 parameters for that variable to having just one parameter to estimate, $\tau$.  
+
+The cost of this reduction in parameters is that we are no longer directly estimating the effect associated with each level, but rather the overall variation in the effects coming from varying levels in the predictor.  Thus random effects are best used when the particular levels of the predictor in question are not central to the research question.  So in a medical trial, even if you were comparing 10 drugs and a placebo, you would not want to make "treatment" a random effect.  
+However, random effects are perfect for situations in which the variable in question is included to control for it when studying the effects of some other main predictor.  Additionally, they can actually result in better models for prediction, as they tend to damp down differences that may be caused by outliers that live in particular levels of the predictor.
+
+A model that includes both random effects and other predictors (any combination of covariates and factors) is called a _mixed model_.  
+
+## 11.1:  Fitting random effects and mixed models
+
+Mixed models are fit in R through the *lme4* package, which I have loaded above.  The command used is *glmer*, and its syntax is quite similar to that of glm.  There is also a version *lmer* that replaces *lm*.  The way that random effects are incorporated is through the use of the syntax $( 1 \mid )$.  
+
+Let's start by just building a model of house price as a function of neighborhood, viewed as a random effect.
+
+```{r}
+mmod1<-lmer(Sale_Price~ (1|Neighborhood),data=amesresidential)
+mmod1
+```
+This tells us that the mean house price was \$187048 and that the standard deviation, $\tau$, of the effect of neighborhood was \$66240, and the residual standard deviation, $\sigma$ was \$52474.  So clearly neighborhood is quite an important consideration!  Of course, neighborhood will also be correlated with other predictors, such as house size, condition, age and the like, so it isn't just location.  Nevertheless, the saying that the most important 3 predictors of house price are "location, location, location" does seem to hold up.
+
+We can extract the estimate of the effect of each neighborhood on sale price as a data frame using the command:
+```{r}
+nbhds<-ranef(mmod1)$Neighborhood
+nbhds
+```
+
+We can visualise these in a histogram:
+```{r}
+hist(nbhds$`(Intercept)`,breaks=10)
+```
+Of course, we can also build models in which we have both random and _fixed effects_, which are either factors or covariates.
+```{r}
+mmod2<-lmer(Sale_Price~ Lot_Area+MS_Zoning+(1|Neighborhood),data=amesresidential)
+mmod2
+```
+Ignore the fit warning here--rescaling isn't necessary for mixed models.
+
+When we have a glm instead of an lm (gaussian model), we fit in the same way, but using glmer.  Let's look at player clean sheets, which is certainly related to club.
+```{r}
+mmod3<-glmer(clean_sheets_overall~appearances_overall+(1|current_club),data=nongkstats,family="poisson")
+mmod3
+```
+Note that I have used a Poisson rather than quasipoisson family here.  That is because glmer doesn't permit the use of quasipoisson family.
+
+I will also note here that when I looked at other count variables, I got a lot of errors of the type "Model failed to converge with max|grad| = 0.0565496 (tol = 0.002, component 1)Model is nearly unidentifiable: very large eigenvalue", eg here with overall goals.
+```{r}
+mmod4<-glmer(goals_overall~minutes_played_overall+position+ (1|current_club),data=nongkstats,family="poisson")
+mmod4
+```
+This relates two two things, one is that club is so explanatory, it causes singularities with the other variables.  The second relates to the algorithm used to fit the model.  Using a slightly different algorithm works better in this setting, and is achieved by adding the options"nAGQ=0" to the code:
+```{r}
+mmod5<-glmer(goals_overall~minutes_played_overall+position+ (1|current_club),data=nongkstats,family="poisson",nAGQ=0)
+mmod5
+```
+
+Here we have just talked about random effects as main effects.  It is also possible to include them in interaction effects.  If you want to do this, there are additional considerations.  We won't go into those in this module, but you can read about them [here](https://cran.r-project.org/web/packages/lme4//vignettes/lmer.pdf) in the section "2.1 Mixed-model formulas".
+
+## 11.2: Evaluating mixed model assumptions
+
+This is the same as for standard glm.  We already examined the scatter of price against lot area for an earlier model and saw that the linearity assumption was reasonable.  So we just need to look at homoscedasticity and normality of residuals.
+
+First for homoscedasticity:
+```{r}
+plot(amesresidential$Lot_Area,mmod2@resp$wtres)
+```
+We have to remove those really large lot size outliers again to see what is going on.
+```{r}
+plot(amesresidential$Lot_Area,mmod2@resp$wtres,xlim =c(0,50000))
+```
+This looks pretty good, no particular evidence of heteroscedasticity.
+We should also look for the levels of MS_Zoning.
+```{r}
+boxplot(mmod2@resp$wtres~amesresidential$MS_Zoning)
+```
+We can check also like this:
+```{r}
+mmod2res<-mmod2@resp$wtres
+mmod2df<-data.frame(amesresidential$MS_Zoning,mmod2res) 
+names(mmod2df)<-c("MS_Zoning","residual")
+mmod2df %>% group_by(MS_Zoning)%>% summarise(sd(residual)) 
+```
+Since the highest sd is less than twice the lowest, that is fine (according to general rule of thumb for homoscedasticity across groups of a factor).
+
+Now check normality of residuals:
+```{r}
+qqnorm(mmod2df$residual)
+```
+Not totally normal for the residuals, but again, probably okay, especially as the datset is large, though we may want to use robust confidence intervals.
+
+When we look at the Poisson model, we need to check dispersion.  The standard plot isn't available for glmer outputs, so instead we use the [following function](https://bbolker.github.io/mixedmodels-misc/glmmFAQ.html#overdispersion)
+```{r}
+overdisp_fun <- function(model) {
+rdf <- df.residual(model)
+rp <- residuals(model,type="pearson")
+Pearson.chisq <- sum(rp^2)
+prat <- Pearson.chisq/rdf
+pval <- pchisq(Pearson.chisq, df=rdf, lower.tail=FALSE)
+c(chisq=Pearson.chisq,ratio=prat,rdf=rdf,p=pval)
+}
+```
+```{r}
+overdisp_fun(mmod3)
+```
+Since p=1, we don't have evidence of overdispersion (in which case p would be small).
+
+## 11.3: Prediction for mixed models
+
+Predicting a particular new value using the model is the same as before, using the predict function
+```{r}
+predict(mmod2,newdata=data.frame(Lot_Area=15000,MS_Zoning="Residential_Low_Density",Neighborhood="Gilbert"))
+```
+
+When we want to give interval estimates, either confidence or prediction intervals, this is mathematically more complicated, as they need to take account of the uncertainty in the parameters $b_0,\ldots, b_n$, but also in the estimate of $\tau$.  We also have now four types of interval we can request:  confidence or prediction intervals for new data where we have only the information about covariate and fixed effect predictors (ie, we don't know what level of the random effect(s) the points correspond to), and confidence intervals where we do have information about the levels of random effect(s).  
+
+For the purposes of this module, we will only consider the second sort, where we are looking for confidence and prediction intervals where we do have information about the levels of random effects for the new data for which we wish to calculate these intervals. To do this, we will use the predictInterval function in the package merTools.
+
+For example, we can estimate a confidence interval for the mean cost of a property with lot area 15000, in a residential low density zone in the Gilbert neighborhood:
+```{r}
+predictInterval(mmod2, newdata=data.frame(Lot_Area=15000,MS_Zoning="Residential_Low_Density",Neighborhood="Gilbert"),include.resid.var = FALSE)
+```
+Or we can use it to obtain a prediction interval for the prices of all such properties:
+```{r}
+predictInterval(mmod2, newdata=data.frame(Lot_Area=15000,MS_Zoning="Residential_Low_Density",Neighborhood="Gilbert"),include.resid.var = TRUE)
+```
+
+Note that the "fit" value isn't quite the same for the three predictions.  Nevertheless, all of the fit values are within the predicted confidence interval.  The discrepancy comes from the fact that it is in fact computationally quite complex to calculate these intervals, and the predictInterval method uses approximations.  You can read more about the method [here](https://cran.r-project.org/web/packages/merTools/vignettes/Using_predictInterval.html).
+
+When we want to predict for the Poisson model, we can use the predict function with type="response" to get a point estimate.  
+
+```{r}
+predict(mmod3,newdata=data.frame(appearances_overall=15,current_club="Chelsea"),type="response")
+```
+
+However, when we get the values from predictInterval, they will be on the scale of the link function rather than the response scale.  So we have to take the exponential function of the results to get our intervals:
+
+For the prediction interval:
+```{r}
+predictInterval(mmod3, newdata=data.frame(appearances_overall=15,current_club="Chelsea"),include.resid.var = TRUE) %>% apply(2,exp)
+```
+
+...and the confidence interval:
+```{r}
+predictInterval(mmod3, newdata=data.frame(appearances_overall=15,current_club="Chelsea"),include.resid.var = FALSE) %>% apply(2,exp)
+```
+
+This isn't the optimal method (hence the warning), but it is still pretty good for most purposes.
+You can read [here](
+https://www.r-bloggers.com/2015/06/confidence-intervals-for-prediction-in-glmms/) about an alternative.
+
+## 11.4: Interval estimates for mixed models
+Confidence intervals for the _parameters_ in the models are obtained the same way as before.  Note that for a Gaussian model, we get a CI f_or both the standard deviation of the random effect (.sig01) and of the residuals (.sigma).
+```{r}
+confint(mmod2)
+```
+And for the Poisson model:
+```{r}
+confint(mmod3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

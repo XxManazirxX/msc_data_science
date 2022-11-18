@@ -1,0 +1,3 @@
+"0","autot <- autot %>%"
+"0","  mutate_at(vars(engine_type),"
+"0","             list(factor))"

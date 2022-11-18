@@ -1,0 +1,8 @@
+"0","train.model <- lmer(Sale_Price~Year_Built+Year_Remod_Add+ Mas_Vnr_Area+ Total_Bsmt_SF+ Gr_Liv_Area+ Fireplaces+ Garage_Cars+ Garage_Area+ Lot_Area+ "
+"0","          BsmtFin_SF_1+Bsmt_Full_Bath+Kitchen_AbvGr+Wood_Deck_SF+Screen_Porch+Misc_Val+"
+"0"," MS_Zoning+ Land_Contour+ Overall_Qual+ Overall_Cond+ Exter_Qual+ Bsmt_Exposure+ Heating_QC+ Kitchen_Qual+ Functional+ Pool_QC +"
+"0","               (1|Neighborhood)+(1|MS_SubClass)"
+"0","                  , data = train.data)"
+"2","Warning:"
+"2"," Some predictor variables are on very different scales: consider rescaling
+"

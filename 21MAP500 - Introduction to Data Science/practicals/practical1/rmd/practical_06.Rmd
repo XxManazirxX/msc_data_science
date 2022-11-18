@@ -1,0 +1,133 @@
+---
+title: "Practical 6"
+author: "Manazir"
+output: html_notebook
+---
+
+```{r, echo=F, eval=F}
+library("here")
+library("tidyverse")
+library("lintr")
+library( "janitor")
+
+```
+
+### 6.1 
+
+```{r, eval=F}
+# parse_double("1,5", locale = locale(decimal_mark = ","))
+# parse_datetime("September 21, 2020 16:25:59 GMT" , format = "%B %d, %Y %T %Z")
+# parse_number("€1.999,99", locale = locale(decimal_mark = ",", grouping_mark = "."))
+
+```
+
+
+
+###6.2
+
+```{r, echo=F, eval= F}
+read_lines(file = here("data", "ramen_ratings.csv"), n_max = 6L)
+
+df <- read_csv2(file= here("data", "ramen_ratings.csv"), skip = 1)
+
+
+
+```
+
+```{r, echo=F, eval=F}
+glimpse(df)
+df <- clean_names(df)
+
+
+```
+
+### 6.3
+```{r, echo=F, eval=F}
+df <- df %>%
+      mutate(stars = parse_double(stars, locale = locale(decimal_mark = ",")))
+
+```
+
+
+```{r, echo=F, eval=F}
+df <- read_csv(here("data", "market_cap.csv")) %>%
+  pivot_longer(
+  cols = !company,
+  names_to = "date" ,
+  values_to = "market_capitalisation"
+  ) %>%
+  mutate(date = parse_date(date))
+```
+
+### 6.4
+
+```{r, eval=F}
+df_nontidy <- tibble(
+  ` ` = c("selfless", "selfish"), 
+  cats = c(4L, 19L), 
+  dogs = c(25L, 3L)
+)
+
+```
+
+
+```{r, eval= F, echo=F}
+df_tidy <-
+  df_nontidy %>%
+  pivot_longer(
+    cols = c(cats, dogs),
+    names_to = "animal",
+    values_to = "count"
+  ) %>%
+  rename (character = ` `)
+
+df_tidy
+
+```
+
+```{r, echo = F, eval= F}
+df_nontidy <-
+  df_tidy %>%
+  pivot_wider(names_from = animal, values_from = count) %>%
+  rename(` ` = character, dogs = dogs, cats = cats)
+
+df_nontidy
+
+```
+
+
+
+### 6.8
+
+```{r, eval= F}
+list.files(path = here("data", "tfl_bike_share", "journeys"), full.names = TRUE)
+
+```
+
+```{r, echo = F, eval= F}
+file.paths <-
+  list.files(
+    path = here( "data", "tfl_bike_share", "journeys"), 
+    full.names = T
+  )
+df <- tibble()
+    for (path in file_paths) {
+      df_new <- read_csv(file = path)
+      df <- bind_rows(df, df_new)
+    }
+ 
+ df_tidy <- df %>% 
+      remove_empty() %>%
+      clean_names() %>% 
+      mutate(end_date = parse_datetime(end_date, format = "%d/%m/%Y %H:%M")) %>% # 
+      mutate(start_date = parse_datetime(start_date, format = "%d/%m/%Y %H:%M")) %>%
+      mutate(across(c(end_station_id, start_station_id, 
+                      end_station_name, start_station_name), 
+                    as.factor)) %>%
+      mutate(duration = as.duration(duration)) %>%
+ mutate(rental_id = as.integer(rental_id))
+    
+    glimpse(df_tidy)
+ 
+```
+

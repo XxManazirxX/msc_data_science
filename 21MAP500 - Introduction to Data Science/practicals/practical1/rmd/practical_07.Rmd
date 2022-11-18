@@ -1,0 +1,189 @@
+---
+title: "Practical 7"
+author: "Manazir"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+```{r}
+library("gapminder")
+library("tidyverse")
+```
+
+```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(year == 2007) %>%
+          ggplot(mapping = aes(x = lifeExp)) +
+          geom_histogram()
+```
+
+```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(year == 2007) %>%
+          ggplot(mapping = aes(y = lifeExp)) +
+          geom_boxplot()
+```
+
+```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(country == "United Kingdom") %>%
+          ggplot(mapping = aes(x = year, y = lifeExp)) +
+          geom_line()
+```
+
+```{r, echo = FALSE, eval = FALSE}
+gapminder %>%
+  ggplot(mapping = aes(x = gdpPercap, y =lifeExp)) + geom_point()
+
+
+```
+
+```{r, echo = FALSE, fig.width = 4, fig.height = 6,}
+gapminder %>%
+  filter(year == 2007 & continent == "Asia") %>%
+  ggplot(mapping = aes(x = gdpPercap, y = country)) + geom_col()
+
+
+```
+
+```{r, echo = FALSE, fig.width = 4, fig.height = 6,}
+gapminder %>%
+  filter(year == 2007 & continent == "Asia") %>%
+  ggplot(mapping = aes(x = gdpPercap, y = reorder(country, gdpPercap))) + geom_col()
+
+
+```
+
+```{r, echo = F, eval = F}
+gapminder %>%
+  group_by(year) %>%
+  summarise(mean_life_exp = weighted.mean(x = lifeExp, w = pop)) %>%
+  ggplot(mapping = aes(x = year, y = mean_life_exp))+ geom_line()
+
+
+```
+
+```{r, echo = F, eval = F, message=F}
+my_country <- "Bangladesh"
+other_countries <- c("Pakistan", "India" , "China", "Sri Lanka", "Nepal", "Singapore") 
+
+gapminder %>%
+  group_by(year) %>%
+  summarise(
+    life_exp = lifeExp[country == my_country],
+    avg_life_exp = weighted.mean(x = lifeExp[country %in% other_countries],
+                                w = pop[country %in% other_countries])
+  ) %>%
+  
+  rename(my_country = life_exp, other_countries = avg_life_exp) %>%
+  pivot_longer(cols = !year, names_to = "country", values_to = "life_exp") %>%
+  ggplot(mapping = aes(x = year, y = life_exp, colour = country)) + geom_line()
+```
+
+      
+    ```{r, echo = FALSE, eval = FALSE}
+    # The only difficult part here is the need for grouping ("group = continent")
+    ggplot(data = gapminder) +
+      geom_line(mapping = aes(x = year, y = lifeExp, group = country)) 
+    ```
+
+
+```{r,echo = F, eval = F, }
+gapminder %>%
+  ggplot(mapping = aes(x = year,
+                     y = lifeExp,
+                     group = continent,
+                     colour = continent)) +
+         geom_line()
+       
+gapminder %>%
+  ggplot(mapping = aes(x = year,
+                       y = lifeExp,
+                       linetype = continent)) +
+        geom_line()
+
+```
+
+```{r}
+ gapminder %>%
+      group_by(continent, year) %>%
+      summarise(mean_life_exp = weighted.mean(lifeExp, pop)) %>%
+      ggplot() +
+      geom_line(mapping = aes(x = year, y = mean_life_exp, colour = continent))
+```
+
+```{r}
+    gapminder %>% 
+  filter(year == 2007) %>%
+      ggplot() +
+      geom_point(mapping = aes(
+                             x      = log10(gdpPercap), 
+                             y      = lifeExp, 
+                             size   = pop, 
+                             colour = continent
+                           )
+      )
+```
+
+
+```{r, message=F, echo=F, fig.height=3, fig.width = 4.5}
+
+gapminder%>%
+  group_by(year, continent) %>%
+  summarise(pop_in_bn = sum(pop) / 10^9) %>%
+  ggplot(mapping = aes(x = year, y = pop_in_bn, fill = continent)) + geom_col(position = position_fill())
+
+gapminder%>%
+  group_by(year, continent) %>%
+  summarise(gdp_in_tn = sum(pop*gdpPercap) / 10^12) %>%
+  ggplot(mapping = aes(x = year, y = gdp_in_tn, fill = continent)) + geom_col(position = position_dodge())
+
+```
+
+
+```{r, message=F, echo=F, fig.height=2, fig.width = 4.5}
+
+
+ggplot(data = mpg) +
+  geom_bar(mapping = aes(x = class))
+
+mpg %>%
+  count(class, name = "count") %>%
+  ggplot() +
+            geom_col(mapping =aes(x = class, y = count))
+
+```
+
+```{r, message=F, echo=F, fig.height=2.5, fig.width = 6}
+
+mpg %>%
+  mutate(year = as.factor(year)) %>%
+  ggplot(mapping = aes(x = class, y = cty)) + geom_boxplot(mapping = aes(colour = year))
+
+```
+
+
+```{r, fig.width = 4.5, fig.height = 3}
+    ggplot(data = mpg) +
+      geom_density(mapping = aes(x = cty, colour = class, fill = class))
+
+
+```
+
+
+```{r, fig.width = 4.5, fig.height = 3}
+
+ggplot(data = mpg) +
+  geom_density(
+    mapping = aes(x = cty, colour = class, fill = class), alpha = 0.1
+  )
+
+
+
+
+```
+
+
+    ```{r, message = FALSE, echo = FALSE, eval = FALSE, fig.width = 4, fig.height = 2.5}
+    ggplot(data = mpg) +
+      geom_freqpoly(mapping = aes(x = cty, colour = class), binwidth = 3)
+```

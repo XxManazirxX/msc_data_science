@@ -1,0 +1,10 @@
+"0","nasa_temp <- read.delim("
+"0","  file = here(""data"",""nasa_global_temperature.txt"" )"
+"0",")"
+"2","Warning in file(file, ""rt"") :"
+"2","
+ "
+"2"," cannot open file 'C:/Users/nada7/OneDrive/Documents/Part T/21MAP500 - Introduction to Data Science/cw/rmd/data/nasa_global_temperature.txt': No such file or directory
+"
+"2","Error in file(file, ""rt"") : cannot open the connection
+"

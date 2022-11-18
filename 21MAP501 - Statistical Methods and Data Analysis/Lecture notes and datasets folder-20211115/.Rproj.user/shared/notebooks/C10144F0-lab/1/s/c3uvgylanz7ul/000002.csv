@@ -1,0 +1,3 @@
+"0","Pl_players <- Pl_players %>%"
+"0","  mutate_at(vars(position),"
+"0","            list(factor))"

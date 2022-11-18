@@ -1,0 +1,6 @@
+"0","gapminder %>%"
+"0","  filter(year == 2007) %>%"
+"0","  ggplot(mapping = aes(x = lifeExp)) +"
+"0","  # geom_histogram()"
+"0","geom_boxplot()"
+"0",""

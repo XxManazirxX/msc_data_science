@@ -1,0 +1,171 @@
+---
+title: "Generalised Linear Models, 2:  Transformed linear and multiple linear regression"
+author: "Manazir"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+library("rio")
+```
+
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  select(Height,Diameter,Volume)
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  #this ensures that missing data recorded in a variety of ways is identified as missing data by R
+``` 
+
+```{r}
+linmod4<-lm(highway_mpg~width+curb_weight+fuel_type+body_style, data=autot)
+summary(linmod4)
+```
+```{r}
+linmod4$coefficients
+```
+
+How many fewer mpg does a car get on average for each additional pound of curb weight? For each additional inch of width?
+
+```{r}
+# for each additional pound of weight
+-0.01148116
+# for each additional inch of width
+
+-0.06352332 
+```
+
+All other variables being equal, how many more mpg did wagons get on average than hatchbacks?
+
+```{r}
+
+# coef wagon - hatchback
+1.51798186 -    0.81921943
+
+```
+
+What is the benefit in mpg to diesel over gas (petrol)?
+
+```{r}
+# Petrol gets 8.7 less mpg than base diesel
+```
+
+In a separate notebook, build a model of horsepower as a function of engine type, engine size and stroke. Invent some questions and answer them using your model.
+
+```{r}
+autot <- autot %>%
+  mutate_at(vars(engine_type),
+             list(factor))
+```
+## Ex1 Filtering
+```{r}
+hatchbacks <- autot %>%
+  filter(body_style == "hatchback")
+```
+
+
+```{r}
+mpgbody <- autot %>%
+  group_by(body_style) %>%
+  summarise(meanhw_mpg =mean(highway_mpg),
+            sdhw_mpg = sd(highway_mpg),
+            meancity_mpg = mean(city_mpg),
+            sdcity_mpg = sd(city_mpg))
+```
+
+
+```{r}
+autot_na <- autot%>%
+  select_if(~ !any(is.na(autot)))
+select(complete.cases(autot))
+```
+```{r}
+library(rio)
+```
+
+
+
+```{r}
+PL_20_21<- import("http://www.football-data.co.uk/mmz4281/2021/E0.csv")
+```
+
+
+
+```{r}
+pl_20_21 <- as_tibble(PL_20_21) %>%
+  select(Div:AR)
+  pl_20_21$Date <- as.Date(pl_20_21$Date, format = "%d/%m/%Y")
+
+  
+```
+```{r}
+pl_20_21 <- pl_20_21 %>%
+  mutate(season = "2020/21")
+```
+
+```{r}
+HomeT <- pl_20_21 %>%
+  select(Div, HomeTeam, AwayTeam, FTHG, FTAG, Date, season) %>%
+  mutate(Home = 1)
+```
+
+
+```{r}
+HomeT <- HomeT %>%
+  rename(Team = HomeTeam, Opponent = AwayTeam, TeamGoals = FTHG, OpponentGoals = FTAG)
+```
+
+``` {r}
+AwayT <- pl_20_21 %>%
+  select(Div, HomeTeam, AwayTeam, FTHG, FTAG, Date, season) %>%
+  mutate(Home = 0)
+```
+
+
+```{r}
+AwayT <- AwayT %>%
+  rename(Team = AwayTeam, Opponent = HomeTeam, TeamGoals = FTAG, OpponentGoals = FTHG)
+
+```
+
+```{r}
+pl_poissondata <- rbind(HomeT, AwayT)
+pl_poissondata[c(1,381),]
+
+```
+
+```{r}
+poisson_pl <- glm(TeamGoals ~ Home + Team + Opponent, data = pl_poissondata, family = poisson(link ="log"))
+summary(poisson_pl)
+```
+
+
+

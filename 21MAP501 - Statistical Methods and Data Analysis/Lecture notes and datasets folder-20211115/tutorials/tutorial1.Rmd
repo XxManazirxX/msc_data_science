@@ -1,0 +1,94 @@
+---
+title: "Generalised Linear Models, 1:  Linear regression"
+author: "Manazir"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+```
+
+## Exercise 2
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  select(Height,Diameter,Volume)
+
+```
+
+```{r}
+trees2 %>%
+  ggplot(mapping = aes(x = Height, y = Volume)) +
+  geom_point() +
+  labs(x = "Height in feet", y = "Volume") +      ggtitle("Height and Volume of black cherry trees") +      theme_classic()
+```
+
+```{r}
+linmod1 <- lm(Volume~Height, data = trees2)
+linmod1
+summary(linmod1)
+
+
+```
+```{r}
+linmod1$coefficients
+```
+
+```{r}
+trees2 %>%
+  ggplot(aes(Height, Volume)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F, colour = "blue") +
+  labs(x = "Height in feet", y = "Volume") +      ggtitle("Height and Volume of black cherry trees") +      theme_classic()
+```
+
+```{r}
+predict(linmod1, data.frame(Height = 80))
+
+sd(linmod1$residuals)
+mean(linmod1$residuals)
+round(mean(linmod1$residuals),7)
+```
+
+```{r}
+hist(linmod1$residuals)
+qqnorm(linmod1$residuals)
+abline(0, 13.17181, col=2)
+```
+
+```{r}
+plot(trees$Height,linmod1$residuals, main="residuals versus height")
+abline(h=0,col=2)
+```
+
+```{r}
+linmod1 %>%
+  gg_diagnose(max.per.page = 1)
+```
+

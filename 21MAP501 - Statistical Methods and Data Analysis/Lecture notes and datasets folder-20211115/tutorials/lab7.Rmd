@@ -1,0 +1,101 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Random effects for repeated measures designs
+
+We will need the following three packages:
+```{r}
+library(lme4)
+library(datarium)
+library(tidyr)
+```
+
+```{r}
+View(weightloss)
+```
+
+The weightloss dataset comes from a crossover design study in which 4 different weight loss regimens were compared across 12 participants.  The order in which the participants undertook the 4 regimes was mixed up in a way to control for the effect that the order of regimes might have on their effectiveness.
+
+Across each regime, each individual was measured 3 times, so each individual has had their weight loss given a score 12 times.
+
+This is therefore a "repeated measures study", that is, where each participant has the same measurement taken at each of several time points.  We want to understand how the changes across time points depend upon regime.
+
+You may previously have seen paired data, where you get a before and after measurement from each of a collection of participants.  In this case, it is standard to subtract the before measurement from the after measurement and do a "paired t-test" on the differences.
+
+The reason is that with a regular comparison of groups that doesn't take account of the fact that you have the same individuals measured twice, the huge variation among individuals can mask any difference over time.  Recall, a significant t-test for two groups would say that the difference between the mean measure before and the mean measure after is large compared to the variability of the measures before.  But if we can control for the vast difference among participants, we may nevertheless find that for EACH participant, there was a nonzero weight loss.
+
+This works when you measure something twice.
+
+But if you measure the outcome three or more times, you can't just subtract, because there are three measurements.
+
+Instead, what we do is build a mixed model in which participant is a random effect.
+
+ONE OF THE MAIN USES OF MIXED MODELS IS THE MODELLING OF REPEATED MEASURES DATA.
+
+Quite often, repeated measures data comes in a wide format, with the rows equal to individuals and the columns given by different time points.  In order to build our data, we need three columns, 1: individual.  2:  time point 3: measure for that individual at that time point.
+Here, we also have two other columns for the two treatment variables.
+
+So we can use the pivot_longer command from tidyr to rearrange the dataset to a long form:
+```{r}
+wtloss<-pivot_longer(weightloss, -c(id,diet,exercises),values_to="Score",names_to="Time")
+```
+
+
+The researchers were interested in both the independent "main" effects of diet and exercise, and in how they interact.  So, we put a * between them to indicate that we want to include an interaction term in the model.
+
+```{r}
+wtmod<-lmer(Score~diet*exercises+Time +(1|id),data=wtloss)
+wtmod
+```
+
+We have an intercept:  9.837
+We have four MAIN FIXED effects: dietyes, exerciseyes, Timet2 and Time T3
+We have an INTERACTION FIXED effect: dietyes:exercisesyes
+And we have a RANDOM EFFECT:  id
+
+```{r}
+confint(wtmod)
+```
+
+Since the confidence interval for the random effect standard deviation is (0,0.56), the random effect is only marginally significant
+
+CI for time t1 for diet only is 0.6962191  1.983781
+CI for time t1 for exercise only is 1.7253857  3.012948
+CI for time t1 for diet AND exercise is 
+```{r}
+0.6962191+1.7253857-2.8368326
+```
+```{r}
+1.983781+3.012948-1.015945
+```
+
+The package datarium information actually suggests that we do a three-way repeated measures, that is, where we take a three-way interaction:
+
+```{r}
+wtmod2<-lmer(Score~diet*exercises*Time +(1|id),data=wtloss)
+wtmod2
+```
+
+now diet+exercise has the following effect at each time point:
+t1
+```{r}
+0.83333-0.11500-0.23417
+```
+
+at t2
+```{r}
+0.83333-0.11500-0.23417+0.01667+1.97000-0.81167+0.65667
+```
+
+at t3
+```{r}
+0.83333-0.11500-0.23417+0.54083+1.50333+5.48250-4.26500
+```
+
+I don't actually think this is a real dataset, incidentally...
+
+Even though they suggest a three way interaction model, given that there are only 144 measurements, and the three way interaction model has 13 parameters to estimate, we wouldn't expect there really to be enough data to do this.
+
+This is where sample size planning in experiments comes in.  If they wanted to do this, they probably needed at least 18-20 participants to get stable effect estimates.

@@ -1,0 +1,15 @@
+"0","library(""tidyverse"")"
+"0","library(""magrittr"")"
+"0","library(""here"")"
+"0","library(""janitor"")"
+"0","library(""readxl"")"
+"0","library(""AmesHousing"")"
+"0","library(""rcompanion"")"
+"0","library(""ggcorrplot"")"
+"2","Warning:"
+"2"," package ‘ggcorrplot’ was built under R version 4.1.2
+"
+"0","library(""corrr"")"
+"2","Warning:"
+"2"," package ‘corrr’ was built under R version 4.1.2
+"

@@ -1,0 +1,3 @@
+"0","set.seed(312)"
+"0","amescv<-cv.glmnet(Amespredict,saleprices)"
+"0","plot(amescv)"

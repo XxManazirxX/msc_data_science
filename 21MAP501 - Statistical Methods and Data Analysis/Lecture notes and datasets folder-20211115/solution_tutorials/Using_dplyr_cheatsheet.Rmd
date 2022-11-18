@@ -1,0 +1,287 @@
+---
+title: "Lab session 4:  Using dplyr cheatsheet"
+output: html_notebook
+---
+
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("pROC")
+library("nnet")
+library("rio")
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  #this ensures that missing data recorded in a variety of ways is identified as missing data by R
+```
+
+The dplyr cheatsheet can be found [here](https://www.rstudio.com/resources/cheatsheets/).
+
+## How to choose a set of rows, ie, cases
+
+Suppose that we want a new dataset that consists of all of the cars of a particular make, eg, nissan.  Because we are choosing a set of CASES that satisfy a particular criterion, we are going to go to the Manipulate Cases part of the dplyr cheatsheet.
+
+```{r}
+Nissans <- filter(autot, make== "nissan")
+```
+
+```{r}
+Audis <- autot %>% filter(make=="audi")
+```
+
+Ex 1:  Now try creating a dataset that has all of the hatchbacks in it.
+
+```{r}
+autot_hatchbacks <- autot %>%
+  filter(body_style == "hatchback")
+```
+
+
+Note on logical and boolean operators:
+
+== test if the two values are equal      1==1 -> TRUE 1==2 --> FALSE
+!= test if the two values are not equal 1 != 1 -> FALSE  1 != 2 --> TRUE
+
+filter(logical test) will pick out the cases that give the value TRUE
+
+```{r}
+NotNissans<- autot%>% filter(make != "nissan")
+```
+
+< test if first is less than second value
+ ">" test if first is greater than second value
+<= test if first is less than or equal to second value
+">=" test if first is greater than or equal to second value
+is.na test if the data is missing (missing data cases)
+!is.na test if the data is not missing (complete cases)
+%in% test if the data is in a list of values
+you can join two logicals together using
+| or--is one or the other true?
+& and -- are both true?
+xor() -- exclusive or, is one or the other, but not both true
+
+```{r}
+NissanHatchbacks <- autot %>% filter(make=="nissan" & body_style == "hatchback")
+```
+
+create a new dataset consisting of all vehicles where horsepower is recorded
+```{r}
+horsepowercomplete <- autot %>% filter(!is.na(horsepower))
+```
+
+Ex 2:  Create a dataset with all hatchback cars that get over 30mpg on the highway.
+
+```{r}
+autot_efficient_hatchbacks <- autot_hatchbacks %>%
+  filter(highway_mpg > 30)
+min(autot_efficient_hatchbacks$highway_mpg)
+```
+
+
+
+## How to choose just certain variables
+
+Eg, we want a new dataset which is of Nissan cars, but only has information about the body style and number of doors.  Now we are choosing which variables to include, so we are looking at Manipulate Variables.
+
+```{r}
+Nissan_style_doors<- Nissans %>% select(body_style,num_of_doors)
+```
+
+Ex 3: Create a new dataset consisting of only those variables with no missing values.
+
+
+```{r}
+autot_no_na_vars <- autot %>%
+  select_if(~ !any(is.na(.)))
+```
+
+
+
+
+## Create a new dataset by summarising across classes in another dataset
+
+Eg, suppose we want a dataset of automobile makes where we record average highway mpg and sd of highway mpg for each make.
+
+```{r}
+Makempgs<- autot %>% group_by(make) %>% summarise (meanhwmpg=mean(highway_mpg), sdhwmpg=sd(highway_mpg))
+```
+
+Ex 4:  Create a new dataset that gives mean and sd for each kind of mpg when grouped by body_type
+
+```{r}
+body_type_mpgs<- autot %>% group_by(body_style) %>% summarise (meanhwmpg=mean(highway_mpg), sdhwmpg=sd(highway_mpg))
+```
+
+## Combine datasets
+
+Suppose we hadn't been given a full dataset of auto data.  We had separate tables for each make.  Eg, we have one table, Audis, with Audi data and another table, Nissans, with Nissan data.  the variables are the same.
+
+We can combine these using bind_rows:
+```{r}
+Audis_and_Nissans<-bind_rows(Audis,Nissans)
+```
+
+Suppose we had one dataset with information on mpg in various contexts and another with information on fuel type and body style.  We can combine these into a single table with all of those variables in it.
+
+First I have to create the separate datasets...
+```{r}
+Mpgdata<-autot %>% select(city_mpg,highway_mpg)
+```
+
+```{r}
+fuel_and_body<- autot %>% select(fuel_type, body_style)
+```
+
+```{r}
+allvars<- bind_cols(Mpgdata,fuel_and_body)
+```
+
+# Exercise
+
+```{r}
+PL_20_21[1,]
+PoissonData[c(1,381),]
+```
+
+
+## Import the football results dataset
+
+library(rio)
+```{r}
+library(rio)
+```
+
+```{r}
+PL_20_21<- import("http://www.football-data.co.uk/mmz4281/2021/E0.csv") 
+```
+
+
+## Convert the dataframe to a tibble using the as_tibble() function
+
+```{r}
+PL_20_21 <- as_tibble(PL_20_21)
+```
+
+
+## Select the variables from Div to AR (select)
+
+```{r}
+PL_20_21 <- PL_20_21 %>%
+  select(Div:AR)
+```
+
+
+## Make sure that Date is treated as a Date (as.Date( )function, format = "%d/%m/%Y")
+
+```{r}
+PL_20_21$Date <- as.Date(PL_20_21$Date, format = "%d/%m/%Y")
+```
+
+
+## Add a variable for the season 2020/21 (mutate)
+
+```{r}
+PL_20_21 <- PL_20_21 %>%
+  mutate(season = "2020/21")
+```
+
+## Make a dataset that treats the Home Team as the Team and the Away team as the opponent
+
+
+### Make a new dataset called HomeT by selecting Div,HomeTeam,AwayTeam,FTHG,FTAG,Date,Season
+
+```{r}
+HomeT <- PL_20_21 %>%
+  select(Div,HomeTeam,AwayTeam,FTHG,FTAG,Date,season)
+```
+
+
+### Add a new variable home = 1
+
+```{r}
+HomeT <- HomeT %>%
+  mutate(home = 1)
+```
+
+
+### Rename HomeTeam to Team, AwayTeam to Opponent, TeamGoals = FTHG, OpponentGoals = FTAG
+
+```{r}
+HomeT <- HomeT %>%
+  rename(Team = HomeTeam, Opponent = AwayTeam, TeamGoals = FTHG, OpponentGoals =  FTAG)
+```
+
+
+
+## Make a dataset that treats the Away Team as the Team and the Home team as the opponent
+
+### Make a new dataset called AwayT by selecting Div,HomeTeam,AwayTeam,FTHG,FTAG,Date,Season
+
+```{r}
+AwayT<- PL_20_21 %>%
+  select(Div,HomeTeam,AwayTeam,FTHG,FTAG,Date,season)
+```
+
+
+### Add a new variable home = 0
+
+```{r}
+AwayT <- AwayT %>%
+  mutate(home = 0)
+```
+
+
+### Rename AwayTeam to Team
+
+### Rename HomeTeam to Opponent
+
+### TeamGoals = FTAG
+
+### OpponentGoals = FTHG
+
+```{r}
+AwayT <- AwayT %>%
+  rename(Team = AwayTeam, Opponent = HomeTeam, TeamGoals = FTAG, OpponentGoals = FTHG)
+```
+
+
+
+
+
+
+
+
+
+
+## Now use rbind to bind the two datasets together
+
+```{r}
+PoissonData <- rbind(HomeT,AwayT)
+PoissonData[c(1,381),]
+```
+
+
+## Build a Poisson model with response variable TeamGoals and predictors Home, Team and Opponent. 
+
+```{r}
+Poisson<- glm(TeamGoals ~ home + Team + Opponent , family = poisson(link = "log"),data = PoissonData )
+summary(Poisson)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

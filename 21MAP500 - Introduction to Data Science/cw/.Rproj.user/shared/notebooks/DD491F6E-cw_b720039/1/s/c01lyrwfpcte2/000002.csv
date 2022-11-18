@@ -1,0 +1,33 @@
+"0","nasa_sea <- read_table(here(""data"", ""nasa_sea_level.csv""),"
+"0","                      skip = 48,"
+"0","                     na = ""NA"","
+"0","                     col_names = F)"
+"1","
+[36m--[39m [1m[1mColumn specification[1m[22m [36m------------------------[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m,
+  X5 = [32mcol_double()[39m,
+  X6 = [32mcol_double()[39m,
+  X7 = [32mcol_double()[39m,
+  X8 = [32mcol_double()[39m,
+  X9 = [32mcol_double()[39m,
+  X10 = [32mcol_double()[39m,
+  X11 = [32mcol_double()[39m,
+  X12 = [32mcol_double()[39m
+)
+
+"
+"0","colnames(nasa_sea)[3] <- ""date"""
+"0","colnames(nasa_sea)[12] <- ""sea"""
+"0","# renaming of the required columns"
+"0","nasa_sea <- nasa_sea %>%"
+"0","  clean_names() %>%"
+"0","  select(date, sea) %>%"
+"0","  mutate(date = format(date_decimal(date),""%Y-%m-%d"")) %>%"
+"0","    mutate(date = as.Date.character(date, format = ""%Y-%m-%d""))"
+"0",""
+"0","# converts decimal to proper year and to type date"
+"0",""

@@ -1,0 +1,14 @@
+---
+title: "Practical 9 "
+author: "Manazir"
+---
+
+
+```{r, echo= F}
+library("tidyverse")
+library("gapminder")
+library("here")
+library("lintr")
+library("RColorBrewer")
+```
+

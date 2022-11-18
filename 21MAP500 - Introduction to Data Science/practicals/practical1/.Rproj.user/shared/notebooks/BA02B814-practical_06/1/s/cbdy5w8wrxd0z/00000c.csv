@@ -1,0 +1,12 @@
+"0","file.paths <-"
+"0","  list.files("
+"0","    path = here( ""data"", ""tfl_bike_share"", ""journeys""), "
+"0","    full.names = T"
+"0","  )"
+"0","df <- tibble()"
+"0","    for (path in file_paths) {"
+"0","      df_new <- read_csv(file = path)"
+"0","      df <- bind_rows(df, df_new)"
+"0","    }"
+"2","Error in file_paths : object 'file_paths' not found
+"

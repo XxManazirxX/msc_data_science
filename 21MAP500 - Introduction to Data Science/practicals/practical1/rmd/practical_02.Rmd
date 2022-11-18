@@ -1,0 +1,47 @@
+---
+title: "Practical 2"
+output: html_notebook
+aurthor: "Manazir"
+
+---
+
+```{r, eval=F, echo=F}
+c(5, 4, 3, 2, 1)
+```
+
+```{r, eval=F, echo=F}
+5:1
+```
+
+```{r, eval=F, echo=F}
+seq(from = 5, to = 1, by = -1)
+```
+
+```{r, eval=F, echo=F}
+seq(from = 10, to = 1, length = 5)
+```
+
+```{r, eval=F, echo=F}
+rep(1:12, each = 2)
+```
+
+```{r}
+letters
+```
+
+```{r, echo=F}
+x <- 1
+letters[x]
+
+x <- 3:5
+letters[x]
+
+x <- 5:3
+letters[x]
+
+x <- seq(from = 2, to = length(letters), by = 2)
+letters[x]
+
+x <- seq(from = length(letters), to = 1, by = -3)
+letters[x]
+```

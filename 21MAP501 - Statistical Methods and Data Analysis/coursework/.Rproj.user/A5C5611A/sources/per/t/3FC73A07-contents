@@ -1,0 +1,423 @@
+---
+title: "20MAC171 Practice Exam Solutions"
+output: pdf_notebook
+---
+
+You will submit your exam in the form of a single R notebook (i.e.`.Rmd` file) which can be rendered ("knitted") to an `.pdf` document. Specifically, submit a folder on Learn containing:
+
+* your R notebook (i.e. the `.Rmd` file),
+* the rendered `.pdf` version of your notebook (in case there are any problems knitting your `.Rmd` during marking).
+
+The exam will be marked on the basis of correctness of code, interpretation of outputs and commentary as indicated.
+
+# Preamble 
+
+```{r, message = FALSE}
+library(rio)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+library(pROC)
+library(car)
+library(nnet)
+library(caret)
+library(lme4)
+library(glmnet)
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+library(ClusterR)
+library(cluster)
+library(vegan)
+library(mclust)
+```
+
+```{r}
+library(AmesHousing)
+Ames<-make_ames()
+```
+```{r}
+playerstats <- import("england-premier-league-players-2018-to-2019-stats.csv")
+playerstats$position<-as.factor(playerstats$position)
+playerstats$club<-as.factor(playerstats$`Current Club`)
+playerstats$nationality<-as.factor(playerstats$nationality)
+playerstats<-playerstats[playerstats$age>10,]
+playerstats$played<-playerstats$minutes_played_overall>0
+football<-playerstats[playerstats$minutes_played_overall>0,]
+footballngk<-football[!(football$position == "Goalkeeper"),]
+footballngk$position<-droplevels(footballngk$position)
+```
+
+```{r}
+wine<-import("Wine.csv")
+```
+
+# 1. Short Essay Questions
+
+The first part of the exam will ask you to write a half-page on each of two questions.  The first is about generalised linear models, and the second is about high dimensional data.
+
+
+# 2. Linear Regression
+
+In this problem, you are going to investigate the response variable Lot_Area through linear regression.  
+
+a. By adjusting x axis range and number of bars, create a useful histogram of Lot_Area on the full dataset.  Ensure that plot titles and axis labels are clear.  Comment on why deleting properties with Lot_Area> 30000 makes sense.  Create a new dataset Ames2 consisting only of those properties with lot area <30000.  (5 points)
+
+Answer:
+```{r}
+hist(Ames$Lot_Area,xlim=c(0,50000),breaks=1000, main="Frequencies of Lot Areas",xlab="Lot Area")
+```
+There are very few properties with >30000 area, and the maximum property area is huge.  These very large area properties are outliers and would be influential points in our model.  So to create a better model to fit most data, we will remove them.  The resulting model will of course only be reliable for properties that it predicts to have lot area < 30000.
+
+Answer:
+```{r}
+Ames2<-Ames[Ames$Lot_Area<30000,]
+```
+
+b. Now remove all cases corresponding to MS_Zoning categories of A_agr (agricultural), C_all (commercial) and I_all (industrial) from the Ames2 dataset.  Drop the unused levels from the MS_Zoning variable. (2 points)
+
+Answer:
+```{r}
+Ames2<-Ames2[!(Ames2$MS_Zoning %in% c("A_agr","C_all","I_all")),]
+Ames2$MS_Zoning<-droplevels(Ames2$MS_Zoning)
+```
+
+c. Choose an appropriate plot to investigate the relationship between MS_Zoning and Lot_Area in Ames2.  (2 points)
+
+Answer:
+```{r}
+boxplot(Ames2$Lot_Area~Ames2$MS_Zoning,xlab="Zoning",ylab="Lot Area",main="Lot area of Ames residential properties \nversus zoning")
+```
+
+d. Choose an appropriate plot to investigate the relationship between Gr_Liv_Area and Lot_Area in Ames2.  Color points according to the factor MS_Zoning.  Ensure your plot has a clear title, axis labels and legend. (4 points)
+
+Answer:
+```{r}
+plot(Ames2$Gr_Liv_Area,Ames2$Lot_Area,col=as.numeric(Ames2$MS_Zoning),xlab="Living Area",ylab="Lot Area",main="Lot Area versus Living Area for \nresidential properties in Ames Housing dataset",xlim=c(0,6000))
+legend(4000,12000,legend=c("Floating Village","High Density","Low Density","Medium Density"),fill=1:4)
+```
+
+e. Choose an appropriate plot to investigate the relationship between Garage_Cars and Lot_Area in Ames2.  Use the "jitter" command to make your plot more clear. (3 points)
+
+Answer:
+```{r}
+plot(jitter(Ames2$Garage_Cars),Ames2$Lot_Area, xlab="Garage size (cars)", ylab="Lot Area",main="Lot area versus garage size for Ames residential properties")
+```
+
+f. Why do we make these plots? Comment on your findings from these plots (1 sentence is fine). (2 points)
+
+Answer:
+We are checking the assumptions of linearity and also investigating the data for outliers and the like.  These predictors all seem important for lot area, and a linear model for the two covariates seems reasonable.
+
+g. Use the lm command to build a linear model, linmod1, of Lot_Area as a function of the predictors MS_Zoning and Gr_Liv_Area for the Ames2 dataset.  Evaluate the assumptions of the model. (5 points)
+
+Answer:
+```{r}
+linmod1<-lm(Lot_Area~MS_Zoning+Gr_Liv_Area,data=Ames2)
+summary(linmod1)
+```
+```{r}
+qqnorm(linmod1$residuals)
+```
+Normality looks okay, though not perfect.
+
+```{r}
+plot(Ames2$Gr_Liv_Area,linmod1$residuals)
+```
+This indicates homoscedasticity is reasonable (residuals don't spread out differently), and also that the linearity seems reasonable (no snaking in the residuals).
+
+h. Use the lm command to build a second linear model, linmod2, for Lot_Area as a function of MS_Zoning, Gr_Liv_Area and Garage_Cars. (2 points)
+
+Answer:
+```{r}
+linmod2<-lm(Lot_Area~MS_Zoning+Gr_Liv_Area+Garage_Cars,data=Ames2)
+summary(linmod2)
+```
+i. Use Anova and Adjusted R-squared to compare these two models, and decide which is a better model. (3 points)
+
+Answer:
+```{r}
+Anova(linmod2)
+```
+Here the p-value for Garage_Cars is pretty small, which suggests that this is an important variable.  The adjusted R squared for linmod2=0.3103, as opposed to for linmod1, where it is 0.3081, so it also gives a slightly better fit.  We would conclude from this that linmod2 is the better model, though not hugely better.
+
+j. Construct a confidence interval and a prediction interval for the lot area of a residential property in the High Density zone, with a 2 car garage and a living area of 1000 sq ft.  Explain what these two intervals mean. (4 points)
+
+Answer:
+```{r}
+predict(linmod2,data.frame(MS_Zoning="Residential_High_Density",Gr_Liv_Area=1000,Garage_Cars=2),interval="confidence")
+predict(linmod2,data.frame(MS_Zoning="Residential_High_Density",Gr_Liv_Area=1000,Garage_Cars=2),interval="prediction")
+```
+The confidence interval is the interval estimate for the mean lot size of all properties with these characteristics.  The prediction interval is the interval in which we anticipate that 95% of lot areas for properties with these characteristics should occur.
+
+k. Now use the lmer function to build a third model, mmod1, for Lot_Area as a function of zoning, living area, garage size and neighborhood.  What is the critical number to pull out from this, and what does it tell us? (3 points)
+
+Answer:
+```{r}
+mmod1<-lmer(Lot_Area~MS_Zoning+Gr_Liv_Area+Garage_Cars+(1|Neighborhood),data=Ames2)
+mmod1
+```
+We see that the standard deviation of the effect due to neighborhood is 2632, which is pretty high, particularly compared to the overall residual, which has standard deviation of 2884, so this does seem to be a useful term to include.
+
+l.  Construct 95% confidence intervals around each parameter estimate for mmod1.
+What does this tell us about the importance of the random effect? (2 points)
+
+Answer:
+```{r}
+confint(mmod1)
+```
+Since the confidence interval for the standard deviation of the random effect does not include zero, we conclude that it is a statistically significant predictor of lot area.
+
+m.  Write out the full mathematical expression for the model in linmod2 and for the model in mmod1.  You may round to the nearest integer in all coefficients. (4 points)
+
+Answer: 
+
+$$
+Lot\_Area \sim N(1759+2038*High\_Den+3903*Low\_Dens+335*Med\_Dens+2.556*Liv\_area + 614*Garage, 3218)
+$$
+
+$$
+Lot\_Area \sim N(1759+2038*High\_Den+3903*Low\_Dens+335*Med\_Dens+2.556*Liv\_area + 614*Garage+\tau, 2884)
+\tau \sim N(0,2632)
+$$
+# 3. Logistic Regression
+
+a. Construct a logistic regression model glmod1 for "played" as a function of player age and position. (2 points)
+
+Answer:
+```{r}
+glmod1<-glm(played~age+position,data=playerstats,family="binomial")
+summary(glmod1)
+```
+b. Construct confidence bands for the variable played as a function of age for each position (hint:  create a new data frame for each position).  Colour these with different tranparent colours for each position and plot them together on the same axes. Put the actual data on the plot, coloured to match the bands, and jittered in position to make it possible to see all points. Ensure you have an informative main plot title, axes labels and a legend. (6 points)
+
+Answer:
+```{r}
+ilink <-family(glmod1)$linkinv
+newageF<-with(playerstats,data.frame(age=seq(min(playerstats$age),max(playerstats$age),length=100),position=rep("Forward",100)))
+newageGK<-with(playerstats,data.frame(age=seq(min(playerstats$age),max(playerstats$age),length=100),position=rep("Goalkeeper",100)))
+newageM<-with(playerstats,data.frame(age=seq(min(playerstats$age),max(playerstats$age),length=100),position=rep("Midfielder",100)))
+newageD<-with(playerstats,data.frame(age=seq(min(playerstats$age),max(playerstats$age),length=100),position=rep("Defender",100)))
+newageF<- cbind(newageF,predict(glmod1,newageF,type="link",se.fit=TRUE)[1:2])
+newageF<-transform(newageF,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+newageGK<- cbind(newageGK,predict(glmod1,newageGK,type="link",se.fit=TRUE)[1:2])
+newageGK<-transform(newageGK,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+newageM<- cbind(newageM,predict(glmod1,newageM,type="link",se.fit=TRUE)[1:2])
+newageM<-transform(newageM,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+newageD<- cbind(newageD,predict(glmod1,newageD,type="link",se.fit=TRUE)[1:2])
+newageD<-transform(newageD,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+```
+
+```{r}
+ggplot()+
+  geom_point(data=playerstats,aes(x=jitter(age),y=jitter(as.numeric(played)),fill=position),pch=21, size=2)+
+  geom_ribbon(data = newageF, aes(ymin = Lower, ymax = Upper, x = age),
+                fill = "green", alpha = 0.2, inherit.aes = FALSE) +
+      geom_line(data = newageF, aes(y = Fitted, x = age)) +
+   geom_ribbon(data = newageD, aes(ymin = Lower, ymax = Upper, x = age),
+                fill = "red", alpha = 0.2, inherit.aes = FALSE) +
+geom_line(data = newageD, aes(y = Fitted, x = age))+
+ geom_ribbon(data = newageGK, aes(ymin = Lower, ymax = Upper, x = age),
+                fill = "blue", alpha = 0.2, inherit.aes = FALSE) +
+ geom_line(data = newageGK, aes(y = Fitted, x = age))+
+  geom_ribbon(data = newageM, aes(ymin = Lower, ymax = Upper, x = age),
+                fill = "orange", alpha = 0.2, inherit.aes = FALSE) +
+geom_line(data = newageM, aes(y = Fitted, x = age))+
+    labs(y = "Probability of having played", x = "Age")
+```
+
+c. Split the data using set.seed(123) and rebuild the model on 70% of the data.  Cross validate on the remaining 30%.  Plot the ROCs for both data and comment on your findings.  (6 points)
+
+Answer: 
+```{r}
+set.seed(123)
+training.samples <- c(playerstats$played) %>%
+  createDataPartition(p = 0.7, list = FALSE)
+train.data  <- playerstats[training.samples, ]
+test.data <- playerstats[-training.samples, ]
+```
+Now we create the model on the training data.
+```{r}
+train.model <- glm(played~age+position, data = train.data,family="binomial")
+```
+
+Next we can predict the values on the training and on the testing data:
+
+```{r}
+predtrain<-predict(train.model,type="response")
+predtest<-predict(train.model,newdata=test.data,type="response")
+```
+
+```{r}
+roctrain<-roc(response=train.data$played,predictor=predtrain,plot=TRUE,main="ROC Curve for prediction of if a player played",auc=TRUE)
+roc(response=test.data$played,predictor=predtest,plot=TRUE,auc=TRUE,add=TRUE,col=2)
+legend(0,0.4,legend=c("training","testing"),fill=1:2)
+```
+These two curves are almost right on top of each other, so it indicates that the model did not overfit the data.
+
+
+# 4. Multinomial Regression
+
+a. For the dataset footballngk, create a model multregmod to predict position from goals_per_90_overall, assists_per_90_overall, conceded_per_90_overall and cards_per_90_overall. (2 points)
+
+Answer:
+```{r}
+multregmod<-multinom(position~goals_per_90_overall+assists_per_90_overall+conceded_per_90_overall+cards_per_90_overall,data=footballngk)
+summary(multregmod)
+```
+b.  Write out the formulas for this model in terms of P(Forward) and P(Midfielder).
+You may round coefficients to 2 digits.  All other factors equal, what position is a player with more assists more likely to play? (5 points)
+
+Answer: 
+$$
+P(Forward)= inverselogit(-2.4+9.6*\mbox{goals_per_90_overall}+3.9*\mbox{assists_per_90_overall}+ \\
+0.3*\mbox{conceded_per_90_overall} + 0.60*\mbox{cards_per_90_overall})
+$$
+
+$$
+P(Midfielder)=inverselogit(-0.45+4.8*goals+2.8*assists+0.05*conceded+0.009*cards)
+$$
+A player with more assists is more likely to be a forward, since this has the largest coefficient for assists.
+
+c.  Evaluate the performance of this model using a confusion matrix and by calculating the sum of sensitivities for the model. Comment on your findings.  (3 points)
+
+Answer:
+```{r}
+tab1<-table(footballngk$position,predict(multregmod))
+tab2<-table(footballngk$position)
+tab1
+```
+```{r}
+tab1[1,1]/tab2[1]+tab1[2,2]/tab2[2]+tab1[3,3]/tab2[3]
+```
+The sum of sensitivities is about 1.63 (versus 1 for random assignment of classes), which is certainly an improvement on no model, but is pretty far from the perfect classifier that would give a value of 3.  We can see that it confuses defenders and midfielders more than it confuses either with forwards.
+
+
+# 6.  Lasso regression
+
+a.  For the dataset Ames2, use the steps of Lasso prediction to choose variables to include in a poisson regression model for the outcome variable "Garage_Cars" (do not include "Latitude" and "Longitude"). (10 points)
+
+
+```{r}
+garagecars<-as.vector(Ames2$Garage_Cars)
+Amespredict<-model.matrix(~.-1,Ames2[,-c(60,80:81)])
+```
+
+Now we can fit our model
+```{r}
+garagefit<-glmnet(Amespredict,garagecars,family="poisson")
+```
+
+First we can see the order in which variables emerge from the penalty as it is reduced.  To do this we use the following command:
+```{r}
+plot(garagefit,xvar = "lambda")
+```
+```{r}
+plot(garagefit,xvar = "dev")
+```
+Note that 80% of the deviance is explained by just 15 variables, so we can prefer a fairly small model.
+```{r}
+garagefit
+```
+
+0.09523
+```{r}
+ames9<-coef(garagefit, s=0.04524)
+ames9@Dimnames[[1]][1+ames9@i]
+```
+We have four covariates:  Full_Bath, Garage_Area, Year_Built, Half_Bath, TotRms_AbvGrd
+and parts of several factors:  Overall_Qual, FoundationP, Garage_Type, Garage_Qual (2/5), Neighborhood, Bsmt_Qual, Fireplace_Qu, Garage_Finish
+
+```{r}
+amescv<-cv.glmnet(Amespredict,garagecars,family="poisson")
+plot(amescv)
+```
+
+```{r}
+ames1sd<-coef(garagefit,s=amescv$lambda.1se)
+setdiff(ames1sd@Dimnames[[1]][1+ames1sd@i],ames9@Dimnames[[1]][1+ames9@i])
+```
+Overall_Qual 4/10, 
+FoundationP 2/6, 
+Garage_Type 4/7, 
+Garage_Qual 3/5, 
+Neighborhood 16/28, 
+Bsmt_Qual 2/6, 
+Fireplace_Qu 1/5, 
+Garage_Finish 2/3
+
+So we will include the covariates:  Full_Bath, Garage_Area, Year_Built, Half_Bath, TotRms_AbvGrd
+and the factors:  Garage_Type, Garage_Qual, Garage_Finish
+and the random effect: Neighborhood
+
+b. Split your data using set.seed(123) to 80% training and 20% testing.  Build the model on the training set using glm and check the assumption of the model using a diagnostic plot and comment on your findings. (5 points)
+
+```{r}
+set.seed(123)
+training.samples <- Ames$Garage_Cars %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- Ames[training.samples, ]
+test.data <- Ames[-training.samples, ]
+```
+Now we create the model on the training data.
+```{r}
+train.model <- lmer(Garage_Cars~+
+               (1|Neighborhood)+(1|MS_SubClass)
+                  , data = train.data)
+```
+
+Now we will make predictions on the testing set.  For models whose response variable is numeric, that is, Gaussian, Poisson or quasipoisson, we consider three performance indicators, R2, RMSE and MAE.
+
+```{r}
+predictions <- train.model %>% predict(test.data)
+data.frame( R2 = R2(predictions, test.data$Sale_Price),
+            RMSE = RMSE(predictions, test.data$Sale_Price),
+            MAE = MAE(predictions, test.data$Sale_Price))
+
+```
+So this is pretty good performance--the R2 is 86, which means there is a very good correlation of about 0.93 between the predicted price and the actual sale price on the testing set:
+```{r}
+sqrt(0.8607292)
+```
+
+c.  Evaluate the performance of this model on the testing set. Comment on your findings.  (3 points)
+
+# 8.  PCA
+
+The dataset "wine" records a chemical analysis of 3 cultivars of wine (Customer_Segment) for 11 different compounds and 2 variables recording colour.
+
+a.  Carry out a principal component analysis for the first 13 variables in the wine dataset, centred and scaled.  How many components are required to account for 80% of the variance in the data? (3 points)
+
+b.  Plot the data (but not the original variables) using the variable Customer_Segment (treated as a factor) for groups.  Do we observe clustering according to the varieties? (3 points)
+
+c.  Now examine the original variables and compare to the clusters.  What characterises the three clusters? (4 points)
+
+
+# 9.  Cluster analysis
+
+a.  Now for the wine dataset, create a new dataset wine_scaled including the first 13 variables, centred and scaled.  (2 points)
+
+b.  Create a distance matrix using the manhattan distance in the "dist" function, then create a dendogram using complete linkages. (3 points)
+
+c.  Discuss the optimal number of clusters in this data.  (3 points)
+
+d.  Now discuss the number of clusters proposed by k-means. (3 points)
+
+e.  Create a variable in the wine dataset for 3 clusters from the hierarchical clustering method and 3 clusters using k-means.  Examine how these relate to the variable Customer_Segment using tables.  Discuss. (4 points)
+
+
+
+
+
+
+
+
+
+
+

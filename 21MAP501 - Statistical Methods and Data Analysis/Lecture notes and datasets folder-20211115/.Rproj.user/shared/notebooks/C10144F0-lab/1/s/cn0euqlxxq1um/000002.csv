@@ -1,0 +1,5 @@
+"0","comic_characters <- comic_characters %>%"
+"0","  mutate_at(vars(ID, ALIGN, EYE, HAIR, SEX, LGBTQ, ALIVE, MONTH_FA, UNIVERSE),"
+"0","             list(factor))"
+"0",""
+"0",""

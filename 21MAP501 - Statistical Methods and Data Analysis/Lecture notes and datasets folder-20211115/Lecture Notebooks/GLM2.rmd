@@ -1,0 +1,324 @@
+---
+title: "Generalised Linear Models, 2:  Transformed linear and multiple linear regression"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+```
+## Read in data
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  select(Height,Diameter,Volume)
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  #this ensures that missing data recorded in a variety of ways is identified as missing data by R
+```
+
+
+
+
+# Section 3:  Multiple regression and derived variables
+
+So far we have considered a situation in which we were interested in predicting a response from a single predictor.  But more generally, there are many different variables that can and will affect a response of interest.  When we build a model that involves several predictors, this is called _multiple regression_.  
+
+## 3.1 Choosing and fitting a first model
+Going back to the trees dataset, we can look at the relationship of both height and diameter to volume.  
+```{r}
+trees2 %>% ggplot(aes(Height,Volume))+
+  geom_point() +
+  labs(x = "Height in feet", y = "Volume in cubic feet") +
+  ggtitle("Height vs Volume") +
+  theme_classic()
+```
+```{r}
+trees2 %>% ggplot(aes(Diameter,Volume))+
+  geom_point() +
+  labs(x = "Diameter in inches", y = "Volume in cubic feet") +
+  ggtitle("Diameter vs Volume") +
+  theme_classic()
+```
+
+Again, we see a roughly linear trend upwards in both of these plots, so we can assume initially that a linear model is reasonable:  
+
+$$
+mean({\rm Volume}) = b_0 + b_1\times {\rm Height} + b_2\times {\rm Diameter}.
+$$
+
+Note that we have the same type of equation as before, but we have added a third term.  The model we will fit is of the form: 
+$$
+{\rm Volume} \sim N(b_0 + b_1\times {\rm Height} + b_2\times {\rm Diameter},\sigma),
+$$ 
+
+where as before, $\sigma$ is a hidden parameter that relates to the width of spread of points around the predicted values.  
+
+In R it is quite simple to fit this model:
+```{r}
+linmod2<-lm(Volume~Height + Diameter,data=trees2)
+summary(linmod2)
+```
+
+Now instead of two coefficients, we have three.  We also have an estimate of the dispersion parameter.  So the fitted model is
+
+$$
+{\rm Volume} \sim N(-57.9877 + 0.3393\times {\rm Height} + 4.7082\times {\rm Diameter},3.881832)
+$$
+
+
+
+See if you can figure out where this came from.
+
+## 3.2 Model transformation
+
+We can examine the suitability by looking at residuals again as before.  First examine the plots of residuals against each predictor to make sure the spread looks even and regular across the plot.
+```{r}
+plot(trees2$Height,linmod2$residuals,main="Residuals vs height")
+```
+
+This looks fine.
+
+```{r}
+plot(trees2$Diameter,linmod2$residuals,main="Residuals vs diameter")
+```
+
+Hmmm... this doesn't look even.  There is a distinct U-shaped trend.  This suggests that maybe our model wasn't right.  In fact, if we think about this, it makes sense.  From geometry, we would expect volume of a tree to scale like the _square_ of its diameter, not its diameter, since 
+
+$$
+\begin{align}
+\mbox{Volume of a cylinder} &= {\rm Height}\times {\rm area} \\
+  &= {\rm Height} \times \pi \times r^2 \\
+  &= {\rm Height} \times \pi \times {\rm Diameter}^2/4.
+\end{align}
+$$
+
+That is not a linear relationship!  
+
+When we come across a situation in which the relationship we want to model is not linear, there are various approaches to do this.  One approach is to transform the variables somehow so that the transformed variables are linearly related, then model the relationship between the transformed variables instead.  In this example, we will transform using logarithms.  Recall that logarithms turn products into sums and powers into multiples.  So if we take the log of both sides of the equation above, we get:
+
+$$
+\log(\mbox{Volume of cylinder}) =\log(\pi/4)+  \log({\rm Height}) + 2 \times \log({\rm Diameter}) 
+$$
+
+Trees are not exact cylinders, so instead we will assume a model of the form
+
+$$
+\log({\rm Volume}) = b_0 +b_1\times \log({\rm Height}) + b_2\times \log({\rm Diameter}).
+$$
+
+So we first add new variables to our datset.  These are called _derived variables_ because instead of being the originally measured variables, they are new variables calculated from these.
+
+```{r}
+trees2<- trees2 %>%
+  mutate(logheight = log(Height)) %>%
+  mutate(logvol = log(Volume)) %>%
+  mutate(logdiam = log(Diameter))
+```
+
+Now let's examine the scatters of these variables:
+```{r}
+trees2 %>% ggplot(aes(logheight,logvol))+
+  geom_point()+
+  labs(x = "log(height)", y = "log(volume)") +
+  ggtitle("Log volume vs log height") +
+  theme_classic()
+```
+```{r}
+trees2 %>% ggplot(aes(logdiam,logvol))+
+  geom_point()+
+  labs(x = "log(diam)", y = "log(volume)") +
+  ggtitle("Log diameter vs log height") +
+  theme_classic()
+```
+
+These actually look better than the first model; particularly the first plot looks more linear.
+
+Now we fit the model
+```{r}
+linmod3<-lm(logvol~logheight + logdiam,data=trees2)
+summary(linmod3)
+```
+
+Now let's have a look at the diagnostic plots.
+```{r}
+linmod3 %>%
+  gg_diagnose(max.per.page = 1)
+
+```
+
+First look at the plots of residuals versus predictors.  These look better!  We may still be a bit concerned that the spread of values at the left side of these two plots may be less than in the middle.  It is hard to tell because there are not many datapoints on the far right, and that may be why the points in the middle look more spread out.  But this may mean that the standard deviation (ie spread of residuals) in the model DOES depend upon the predictor variables, contrary to our assumption (of _homoscedasticity_) that it doesn't. This is called _heteroscedasticity_.  Here it isn't too bad, so this model is still reasonable, but this is something to look out for in general.  You can read more [here](https://medium.com/datamotus/solving-the-problem-of-heteroscedasticity-through-weighted-regression-e4a22f1afa6b) or [here](https://statisticsbyjim.com/regression/heteroscedasticity-regression/#:~:text=What%20Problems%20Does%20Heteroscedasticity%20Cause,is%20constant%20across%20the%20plot.&text=This%20effect%20occurs%20because%20heteroscedasticity,does%20not%20detect%20this%20increase.)
+
+
+
+Now look at the qq plot for residuals.  Again, except a few points on the left, this looks pretty good.
+
+So now we can write our final model, which will be in terms of the derived variables rather than the original variables:
+
+$$
+{\rm logvol} \sim N(-6.63162 + 1.11712\times {\rm logheight} + 1.98265\times {\rm logdiam}, 0.08138607).
+$$
+
+
+## 3.3 Prediction in our model
+
+Now suppose we had a tree that was 82 feet tall and 10 inches in diameter.  What does our model predict for the volume?  Recall that we need to take the log of the height and diameter when we put them into the model.  If we use the predict function, we get:
+
+```{r}
+predict(linmod3,newdata=data.frame(logheight=log(80),logdiam=log(10)))
+```
+This seems a bit low, right?  That is because what we have predicted isn't the volume, but rather $\log({\rm volume})$.  Recall that the $\exp$ function "undoes" $\log$.  So to get back to volume, we do this:
+```{r}
+exp(predict(linmod3,newdata=data.frame(logheight=log(80),logdiam=log(10))))
+```
+
+
+
+# Section 4: Multiple regression with factors for the Gaussian family
+
+So far we have only considered quantitative variables: height, diameter, volume.  But in many datasets, some of the predictors of interest, or that may be confounders, are categorical:  brand, country, species.  When we use a categorical variable as a predictor, we call it a _factor_.  To consider multiple regression when there are factors as well as continuous predictors (also sometimes called _covariates_), we will look at a dataset from the Ward's Automotive Yearbook of 1985, available for download at [Kaggle](https://www.kaggle.com/toramky/automobile-dataset/data).  We have already loaded this data in the preamble.
+
+Let's take a look at it
+```{r}
+autot
+```
+
+Note this dataset has several categorical variables, such as make, fuel type, aspiration, body style and so on, as well as some quantitative variables, such as wheel base, length, width, height and so on.  Something like number of doors, which only seems to take on two different values, 2 and 4, could be treated as either categorical or numerical.  
+
+Let's look where there are missing values:
+```{r}
+autot %>% sapply(function(x) sum(is.na(x)) )
+```
+
+In order to avoid dealing with missing values at the moment, let's look at the relationship among variables without missing values, such as 'fuel_type', 'body_style', 'width', and 'curb_weight', and how those influence 'highway_mpg'.  
+```{r}
+autot <- autot %>%
+  mutate_at(vars(fuel_type, body_style), 
+            list(factor)) 
+```
+
+You can notice that under the Environment tab at the top right of the RStudio window, if you look at the dataset autot by clicking the arrow to its left, that fuel is a factor with two levels, "diesel" and "gas", and body is a factor with five levels, "convertible", "hardtop", "hatchback", "sedan" and "wagon".
+
+## 4.1 Choosing a model with factors
+
+Let's look at the relationships between these covariates and the reponse, highway mpg:
+```{r}
+autot %>%  ggplot(aes(width,highway_mpg))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE,colour="red") +
+      labs(x = "Auto width in inches", y = "Highway MPG") +
+      ggtitle("Auto width versus Highway MPG") +
+      theme_classic()
+```
+```{r}
+autot %>%  ggplot(aes(curb_weight,highway_mpg))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE,colour="red") +
+      labs(x = "Auto weight in lbs", y = "Highway MPG") +
+      ggtitle("Auto weight versus Highway MPG") +
+      theme_classic()
+```
+The two plots against covariates look relatively linear, so we can propose a linear model, at least to start.  Note that we can ALWAYS propose a linear model for factors (categorical predictors).  We will have to examine normality and homoscedasticity of residuals for both factors and covariates, though.
+
+The model we will fit is of the form
+
+$$
+\begin{align}
+\mbox{mean highway mpg} &\sim N(b_0 + b_1\times {\rm width} + b_2\times {\rm curb-weight} \\
+&+ b_3\times {\rm isgas} + b_4\times {\rm ishardtop} + b_5\times {\rm ishatchback}\\ &+ b_6\times {\rm issedan} + b_7\times {\rm iswagon}, \sigma).
+\end{align}
+$$
+
+Here ${\rm isgas} = 0$ if the fuel is not gas (ie is diesel), and $= 1$ if the fuel is gas.
+The variable ${\rm ishardtop} = 0$ if the body is not a hardtop, and $= 1$ if it is.
+The other variables are similar.
+So notice that for a diesel fueled convertible, the model reduces to:
+
+$$
+\mbox{mean higway mpg} \sim N(b_0 + b_1\times {\rm width} + b_2\times {\rm curb-weight}, \sigma).
+$$
+
+
+We say that diesel is the _base level_ of fuel and convertible is the _base level_ of body.
+So for the other factor levels, we can interpret the coefficients as representing the increase in mean highway mpg associated to that level as opposed to the base level, as compared to with covariates, where they represent the increase in mean highway mpg for each unit increase in the covariate.
+
+## 4.2 Fitting and examining a model with factors
+The command we use to fit this model is pretty much the same as before:
+```{r}
+linmod4<-lm(highway_mpg~width+curb_weight+fuel_type+body_style, data=autot)
+summary(linmod4)
+```
+
+Now we want to examine the diagnostic plots:
+
+```{r}
+linmod4 %>%
+  gg_diagnose(max.per.page = 1)
+
+```
+
+
+First consider the histogram and qq plot for the residuals.  These are not perfect, but okay.  
+
+Now look the scatter against the covariates, width and curb_weight, and the plot of fitted against residuals.  These again look _okay_, maybe a bit more spread at lower widths, and a slight u shape to the residuals vs weight and fitted versus residuals.  We could transform, but there isn't a clear physical reason to do this, and it is likely that actually these effects are due to important missing predictors that may be correlated to curb weight.  If the main point of this subsection were to develop a good model, I would look into this more, but for the current purposes, it is fine.
+
+Next consider the residuals versus the categorical variables:
+The interquartile ranges in the boxplots look pretty similar, so the model seems fine, if not optimised.
+
+The final model is (with coefficients rounded here to 2$\sigma$ for compactness):
+
+$$
+\begin{align}
+\mbox{mean highway mpg} \sim  N( &71 + -0.064\times {\rm width} \\ 
+&- 0.011\times{\rm curb-weight} - 
+                         8.7\times {\rm isgas} \\ 
+&+ 0.33\times {\rm ishardtop} + 0.82\times {\rm ishatchback} + 1.3\times {\rm issedan} \\ & + 1.5\times {\rm iswagon}, 3.3).
+\end{align}
+$$
+
+
+## 4.3 Predicting with factors
+Now we can answer summarising questions for the cars in this dataset, such as:
+
+* How many fewer mpg does a car get on average for each additional pound of curb weight?  For each additional inch of width?
+* All other variables being equal, how many more mpg did wagons get on average than hatchbacks?
+* What is the benefit in mpg to diesel over gas (petrol)?
+
+Note that which predictor variables are the variables of interest and which are confounding variables depends on the question you are asking.  The variables named in the question are the ones of interest.  The ones that aren't are the confounders (all other variables being equal) for which you are controlling.
+
+For instance, probably in general wagons get much LOWER mpg than hatchbacks, but that is because they generally weigh more.  Once we have controlled for differences in weight by including weight as a predictor in the model, we can see that _for cars of the same weight, width and with the same fuel type_, on average wagons got better mpg than hatchbacks.  
+
+# 4.4 Exercises
+
+1.  Answer the questions in the previous section using the model we built.
+
+2. In a separate notebook, build a model of horsepower as a function of engine type, engine size and stroke.  Invent some questions and answer them using your model.
+
+

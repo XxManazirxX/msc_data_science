@@ -1,0 +1,449 @@
+---
+title: "Practical 7"
+author: "Axel Finke"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+
+
+### 7.0 Exercise
+
+Start a new R notebook named `practical_07.Rmd` and save it to the `rmd` folder of your RStudio project `practicals`. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook. 
+
+
+### 7.1 Exercise
+
+Consider again the `gapminder` data discussed in the lecture notes (recall that this data set is made available through `library("gapminder")`).
+
+a. Create the following figures.
+
+    i. a histogram of life expectancies in different countries for the year 2007;
+    
+        ```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(year == 2007) %>%
+          ggplot(mapping = aes(x = lifeExp)) +
+          geom_histogram()
+        ```
+        
+    ii. a boxplot of life expectancies in different countries for the year 2007;
+    
+        ```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(year == 2007) %>%
+          ggplot(mapping = aes(y = lifeExp)) +
+          geom_boxplot()
+        ```
+    iii. a line graph showing how life expectancy has evolved in the United Kingdom;
+    
+        ```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          filter(country == "United Kingdom") %>%
+          ggplot(mapping = aes(x = year, y = lifeExp)) +
+          geom_line()
+        ```
+    iv. a scatterplot of GDP per capita vs life expectancy.
+        ```{r, echo = FALSE, eval = FALSE}
+        gapminder %>%
+          ggplot(mapping = aes(x = gdpPercap, y = lifeExp)) +
+          geom_point()
+        ```
+    
+    
+
+b. Recreate the following figure which shows the GDP per capita for countries in Asia in 2007.
+
+    ```{r, fig.width = 4, fig.height = 6, echo = FALSE}
+    # Make sure that your notebook includes
+    # library("gapminder")
+    
+    # For simplicity, let's only consider countries in Asia and only the year 2007:
+    gapminder %>%
+      filter(year == 2007 & continent == "Asia") %>%
+      ggplot(mapping = aes(y = country, x = gdpPercap)) +
+      geom_col()
+    ```
+
+c. Unless your data have a natural order (as, e.g., in time-series data), it is often sensible to order your data. With this in mind, improve the following figure. **Hint:** you may find the base R function `reorder()` useful which takes two 
+arguments and which thus allows you to reorder the entries in `x` 
+according to the elements in `y` by typing `reorder(x, y)`.
+    
+    
+    ```{r, eval = FALSE, echo = FALSE,  fig.width = 4, fig.height = 6}
+    gapminder %>%
+      filter(year == 2007 & continent == "Asia") %>%
+      ggplot(mapping = aes(y = reorder(country, gdpPercap), x = gdpPercap)) +
+      geom_col()
+    ```
+
+d. Visualise, using a single line, how the global average life expectancy has evolved between 1952 and 2007. Make sure to take the different population sizes in different countries into account. You may find the function `weighted.mean()` helpful.
+  
+    ```{r, message = FALSE, eval = FALSE, echo = FALSE}
+    # The only difficulty in this question is that we first need to transform
+    # our data frame such that it only shows the (weighted) average global
+    # life expectancy for each year. Remember that the verb summarise().
+    
+    gapminder %>%
+      group_by(year) %>%
+      summarise(mean_life_exp = weighted.mean(x = lifeExp, w = pop)) %>%
+      ggplot(mapping = aes(x = year, y = mean_life_exp)) +
+      geom_line()
+    ```
+
+e. Visualise how the life expectancy in your own country has evolved relative to the weighted average of other, similar countries, e.g. its neighbours (with weighting by population size).
+        
+    ```{r, eval = FALSE, echo = FALSE, message = FALSE}
+    my_country <- "Germany"
+    other_countries <- c("France", "Netherlands", "Belgium", "Denmark", "Switzerland", "Austria", "Poland", "Czech Republic") # e.g. here I'm using the immediate neighbours of Germany
+    
+    gapminder %>%
+      mutate(country = as.character(country)) %>%
+      group_by(year) %>%
+      summarise(
+        life_exp_my_country           = lifeExp[country == my_country], 
+        mean_life_exp_other_countries = weighted.mean(
+                                          x = lifeExp[country %in% other_countries], 
+                                          w = pop[country %in% other_countries]
+                                        )
+      ) %>%
+      ggplot() +
+      geom_col(
+        mapping = aes(
+                    x = year, 
+                    y = life_exp_my_country - mean_life_exp_other_countries
+                  )
+      )
+    
+    # Alternative solution: reshape into a different tidy table first; then we can
+    # map to the colour aesthetic. However, showing the difference of life expectancies
+    # in a single line (rather than two lines) is likely more meaningful
+
+    
+    gapminder %>%
+      group_by(year) %>%
+      summarise(
+        life_exp = lifeExp[country == my_country],
+        avg_life_exp = weighted.mean(x = lifeExp[country %in% other_countries], 
+                                     w = pop[country %in% other_countries])
+      ) %>% 
+      rename(my_country = life_exp, other_countries = avg_life_exp) %>%
+      pivot_longer(cols = !year, names_to = "country", values_to = "life_exp") %>%
+      ggplot(mapping = aes(x = year, y = life_exp, colour = country)) +
+      geom_line()
+    ```
+
+
+f. Visualise the how the life expectancy has evolved between 1952 and 2007 for all countries in the data set without differentiating them visually (i.e. draw one black line for each country).
+      
+    ```{r, echo = FALSE, eval = FALSE}
+    # The only difficult part here is the need for grouping ("group = continent")
+    ggplot(data = gapminder) +
+      geom_line(mapping = aes(x = year, y = lifeExp, group = country)) 
+    ```
+  
+g. Create the same graph as before but now ensure that the lines have different colours depending on the continent to which a country belongs. Also plot the same figure but with different line types instead of colours for each continent.
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    # Remember to use ("group = continent")
+    gapminder %>%
+      ggplot(mapping = aes(x = year, 
+                           y = lifeExp, 
+                           group = continent, 
+                           colour = continent)) +
+      geom_line()
+    
+    gapminder %>% 
+      ggplot(mapping = aes(x = year, 
+                           y = lifeExp, 
+                           linetype = continent)) +
+      geom_line()
+    ```
+  
+h. Visualise how the continent-wise average life expectancy has evolved between 1952 and 2007 via a suitable graph.
+
+    ```{r, echo = FALSE, eval = FALSE, message = FALSE}
+    gapminder %>%
+      group_by(continent, year) %>%
+      summarise(mean_life_exp = weighted.mean(lifeExp, pop)) %>%
+      ggplot() +
+      geom_line(mapping = aes(x = year, y = mean_life_exp, colour = continent))
+    ```
+
+i. Create a scatterplot of the base-10 logarithm of GDP per capita vs life expectancy in 2007 such that the colour of the points differs with continent and the size of the points gives information about the population size. 
+      
+    ```{r, eval = FALSE, message = FALSE, echo = FALSE, fig.height = 3, fig.width = 4.5}
+    # We simply map the metric variable population size to the "size" aesthetic
+    # and the categorical variable continent to the "colour" aesthetic.
+    gapminder %>% filter(year == 2007) %>%
+      ggplot() +
+      geom_point(mapping = aes(
+                             x      = log10(gdpPercap), 
+                             y      = lifeExp, 
+                             size   = pop, 
+                             colour = continent
+                           )
+      )
+    ```
+        
+j. Plot a scatterplot of the base-10 logarithm of GDP per capita vs life expectancy such that the colour of the points is differs with the year, i.e. `colour = year`. What happens if you map `colour = as.factor(year)` or `colour = as.ordered(year)`instead. Which do you find more sensible?
+      
+    ```{r, eval = FALSE, message = FALSE, echo = FALSE, fig.height = 4, fig.width = 5}
+    p <- ggplot(
+           data    = gapminder, 
+           mapping = aes(x = log10(gdpPercap), y = lifeExp)
+         )
+    
+    # continuous colour scale doesn't seem appropriate because 
+    # we only have round years in our data set.
+    p + geom_point(mapping = aes(colour = year)) 
+    
+    # qualitative colour scheme doesn't seem appropriate either because we lose 
+    # all the information about the ordering (in time).
+    p + geom_point(mapping = aes(colour = as.factor(year)))
+    
+    # sequential but discrete colour scheme seems more appropriate.
+    p + geom_point(mapping = aes(colour = as.ordered(year)))
+    ```
+      
+k. Explain what is wrong with the following (without running the code).
+        
+    ```{r, eval = FALSE}
+    ggplot(data = gapminder) +
+      geom_point(mapping = aes(x = log10(gdpPercap), y = lifeExp, shape = pop))
+    ```
+    
+    ```{r, echo = FALSE}
+    # We are attempting to map the population size ("pop") which is a continuous
+    # (i.e. metric) variable to a discrete aesthetic ("shape"), i.e. to the
+    # shapes of the points. This cannot work. We should map to, e.g., the
+    # size of the points instead.
+    ```
+    
+        
+l. Reproduce the following figures in which `pop_in_bn` is the total global population [in billion persons] and `gdp_in_tn` is the total global GDP [in trillion US dollars].
+    
+    ```{r, message = FALSE, echo = FALSE, fig.height = 3, fig.width = 4.5}
+    gapminder %>%
+      group_by(year, continent) %>%
+      summarise(pop_in_bn = sum(pop) / 10^9) %>%
+      ggplot(mapping = aes(x = year, y = pop_in_bn, fill = continent)) +
+      geom_col()
+    
+    gapminder %>%
+      group_by(year, continent) %>%
+      summarise(gdp_in_tn = sum(pop * gdpPercap) / 10^12) %>%
+      ggplot(mapping = aes(x = year, y = gdp_in_tn, fill = continent)) +
+      geom_col()
+    ```
+
+m. Modify the figures from the previous question in such a way that they better emphasise the *proportion* of the total global population or total global GDP that different continents account for.
+    
+    ```{r, message = FALSE, eval = FALSE, echo = FALSE, fig.height = 3, fig.width = 4.5}
+    # The only change compared to the previous
+    # question is the position adjustment.
+    gapminder %>%
+      group_by(year, continent) %>%
+      summarise(pop_in_bn = sum(pop) / 10^9) %>%
+      ggplot(mapping  = aes(x = year, y = pop_in_bn, fill = continent)) +
+      geom_col(position = position_fill())
+    
+    gapminder %>%
+      group_by(year, continent) %>%
+      summarise(gdp_in_tn = sum(pop * gdpPercap) / 10^12) %>%
+      ggplot(mapping = aes(x = year, y = gdp_in_tn, fill = continent)) +
+      geom_col(position = position_fill()) 
+    
+    # In both figures created above, we should change the label on the 
+    # second axis (because, e.g., "pop_in_bn" is not very clean)
+    # We will learn how to do this in Chapter 9.
+    ```    
+n. Which position adjustment would you need to have the bars for each continent side-by-side rather than stacked on top of one another?
+
+    ```{r, echo = FALSE}
+    # We need to replace postion = position_fill() by 
+    # position = position_dodge().
+    ```
+
+    
+
+### 7.2 Exercise
+
+According to the ["Data visualisation with **ggplot2**" cheat sheet](https://github.com/rstudio/cheatsheets/raw/master/data-visualization.pdf), both `geom_col()` and `geom_bar()` create bar plots. 
+
+a. Why does `geom_col()` require both the `x` and `y` aesthetic whereas `geom_bar()` only requires the `x` aesthetic?
+    
+    ```{r, echo = FALSE}
+    # To explain the difference, assume that we want to create a barplot of the
+    # number of cars within each "class" in the mpg data set (where "class" can 
+    # can take values one of the seven values in
+    # "2seater", "compact", "midsize", "minivan", "pickup", 
+    # "subcompact", "SUV"). 
+    # That is, we want a bar for each of these values whose height should
+    # indicate the number of cars in that class in the data set.
+    
+    # geom_bar() only requires the x-aesthetic because it automatically counts
+    # the number of cars in each class and then plots the heights of the bars
+    # accordingly.
+    
+    # In contrast, geom_col() expects us to manually specify the heights of the
+    # bars. That is, in order to create the same barplot as before, we must 
+    # first transform our data frame so that it only contains seven rows 
+    # (one for each class) and then the names of the classes in one column
+    # and the number of cars in that class in another column.
+    
+    # If you are still a bit confused by this, look at the code for Part (b)
+    # below.
+    ```
+
+
+b. Recreate the following figure using `geom_col()` and `geom_bar()`.
+  
+    ```{r, fig.width = 4.5, fig.height = 2}
+    # Here, the number of cars in each class is automatically counted.
+    ggplot(data = mpg) +
+      geom_bar(mapping = aes(x = class))
+    ```
+
+    ```{r, echo = FALSE, eval = FALSE, fig.width = 4.5, fig.height = 2}
+    # Here, we must first create a data set with only seven rows
+    # which contains the names of each class and then the number of cars
+    # within each.
+    mpg %>% 
+      count(class, name = "count") %>%
+      ggplot() +
+      geom_col(mapping = aes(x = class, y = count))
+    ```
+
+
+    
+### 7.3 Exercise
+
+Consider again the `mpg` data.
+
+a. Recreate the following figure.
+
+    ```{r, echo = FALSE, fig.width = 6, fig.height = 2.5}
+    # The only difficulty here is that in order to make a grouped boxplot, 
+    # the grouping variable needs to be categorical 
+    # e.g a factor, not numerical.
+    
+    mpg %>%
+      mutate(year = as.factor(year)) %>% # if we had more than two years,
+      # as.ordered(year) could be more appropriate to emphasise the ordering
+      # of year numbers
+      ggplot(mapping = aes(x = class, y = cty)) +
+      geom_boxplot(mapping = aes(colour = year))
+    ```
+
+b. Improve the following figure to deal with the overlap.
+        
+    ```{r, fig.width = 4.5, fig.height = 3}
+    ggplot(data = mpg) +
+      geom_density(mapping = aes(x = cty, colour = class, fill = class))
+    ```
+    
+    ```{r, echo = FALSE, eval = FALSE, fig.width = 4.5, fig.height = 3}
+    # This question teaches that transparency is often your friend
+    # when it comes to dealing with overlapping visual elements.
+    ggplot(data = mpg) +
+      geom_density(
+        mapping = aes(x = cty, colour = class, fill = class), 
+        alpha = 0.1 
+      )
+    ```
+
+
+c. Read the documentation for `geom_histogram()` to learn how the number of bins/bin widths in a histogram can be controlled. Then explore different bin widths to improve data display in the following figure.
+    
+    ```{r, message = FALSE, fig.width = 4, fig.height = 2.5}
+    ggplot(data = mpg) +
+      geom_freqpoly(mapping = aes(x = cty, colour = class))
+    ```
+    
+    ```{r, message = FALSE, echo = FALSE, eval = FALSE, fig.width = 4, fig.height = 2.5}
+    # This question teaches the use of the "binwidth" argument.
+    ggplot(data = mpg) +
+      geom_freqpoly(mapping = aes(x = cty, colour = class), binwidth = 3)
+    ```
+
+
+### 7.4 Exercise*
+
+[**this question is very advanced -- you may skip it**] Consider `gapminder` data set once more.
+
+```{r, echo = FALSE, message = FALSE}
+library("gapminder")
+```
+
+a. Read again the documentation for `geom_boxplot()` to recall how the length of the whiskers in boxplots is determined (which in turn determines which points are treated as "outliers").
+
+b. Recreate the following figure based on the filtered data for the year 2007 (colour and transparency level do not need to be reproduced exactly) which uses the rule that boxplots are automatically omitted for groups containing less than 20 observations.
+    
+    ```{r, echo = FALSE, message = FALSE, fig.width = 5, fig.height = 5}
+    df <- gapminder %>%
+      filter(year == 2007) %>%
+      group_by(continent) %>%
+      mutate(continent_count = n())
+    
+    n_min <- 20 # minimum number of data points in a group to trigger a boxplot
+    
+    p <- ggplot(data = df, mapping = aes(x = continent, y = gdpPercap)) +
+           geom_point(
+             position = position_jitter(width = 0.1, height = 0), 
+             alpha    = 0.3
+           ) +
+           geom_boxplot(
+             data          = . %>% filter(continent_count >= n_min),
+             fill          = "#00B6EB",
+             colour        = "#00B6EB",
+             alpha         = 0.2,
+             outlier.shape = NA,
+             varwidth      = TRUE
+           )
+    p
+    ```
+
+
+c. Modify the code from the previous question so that points designated as outliers or points in groups without sufficient numbers of observations are automatically labeled as shown below. *Note:* you can automatically extract the endpoints of the whiskers computed by `geom_boxplot()`. The easiest way to access these is from the data frame `ggplot_build(p)$data[[i]]` where `p` is the variable to which your figure has been assigned and assuming that the boxplots form the `i`th layer. Likewise, you can access the coordinates of the jittered points from the data frame `ggplot_build(p)$data[[j]]` assuming that the jittered points form the `j`th layer. Finally, the figure below also uses the package [ggrepel](https://cran.r-project.org/web/packages/ggrepel/vignettes/ggrepel.html) which provides a modification of `geom_text()` called `geom_text_repel()` that deals better with overlapping labels.
+
+
+    ```{r, echo = FALSE, message = FALSE, fig.width = 5, fig.height = 5}
+    ggplot_build(p)$data[[1]] %>% # the jittered points form the first layer
+      tibble() %>%
+      select(c(x, y)) %>% 
+      mutate(x = as.numeric(x)) ->
+      points_info
+    
+    # Finds the continents for which we have drawn a boxplot.
+    df %>%
+      ungroup() %>%
+      filter(continent_count >= n_min) %>%
+      pull(continent) %>% # extracts only the column continent
+      fct_drop() %>% # drops unused factor levels
+      fct_unique() -> # returns only unique factor levels while maintaining the level ordering
+      levels_with_boxplot
+      
+    ggplot_build(p)$data[[2]] %>% # the boxplots form the second layer
+      tibble() %>%
+      select(c(ymin, ymax, group)) %>%
+      rename(continent = group) %>%
+      mutate(continent = as.factor(continent)) %>%
+      mutate(continent = factor(
+                           continent,
+                           labels = levels(levels_with_boxplot)
+                         )
+      ) ->
+      boxplot_info
+    
+    df2 <- bind_cols(df, points_info)
+    df2 <- left_join(df2, boxplot_info) %>%
+      mutate(is_labeled = FALSE) %>%
+      mutate(is_labeled = replace(is_labeled, y < ymin | y > ymax | continent_count < n_min, TRUE))
+    
+    library("ggrepel") 
+    q <- df2 %>%
+      filter(is_labeled == TRUE) %>%
+      geom_text_repel(mapping = aes(x = x, y = y, label = country), size = 4)
+    
+    p + q
+    ```

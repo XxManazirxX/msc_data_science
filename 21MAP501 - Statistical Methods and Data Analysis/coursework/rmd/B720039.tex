@@ -1,0 +1,1380 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\title{Coursework\_MAP501\_2021}
+\author{Unknown}
+\date{today}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Coursework\_MAP501\_2021},
+  pdfauthor={Unknown},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{instructions}{%
+\section{Instructions}\label{instructions}}
+
+In this coursework, we will be using several datasets about baseball
+from the package `Lahman'. You can access the list of datasets and all
+of the variables contained in each one by examining this package in the
+Packages tab in RStudio.
+
+Please do not change anything in the Preamble section.
+
+Marks are given for each part of each question in the form {[}C (points
+for code)+ D (points for discussion){]} . To achieve full points for
+code, code must use tidyverse syntax where possible.
+
+\hypertarget{preamble}{%
+\section{Preamble}\label{preamble}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(}\StringTok{"tidyverse"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"magrittr"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"here"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"janitor"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"lubridate"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"gridExtra"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"readxl"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"glmnet"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"Lahman"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"viridis"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"lindia"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"lme4"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"caret"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"pROC"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{datasets}{%
+\section{1. Datasets}\label{datasets}}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\item
+  {[}3 + 0 points{]} Create a new dataset called `Peopledata' that
+  contains all of the variables in the `People' dataset by
+
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \tightlist
+  \item
+    removing all birth information except birthYear and birthCountry and
+    all death information, along with the variable finalGame;
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Peopledata }\OtherTok{\textless{}{-}}\NormalTok{ People }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(playerID, birthYear, nameFirst, nameLast, weight, height, bats, throws, debut, birthCountry) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{rename}\NormalTok{(}\AttributeTok{bornUSA =}\NormalTok{ birthCountry)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ii. replacing birthCountry is by bornUSA, a logical variable indicating if the player was born in the USA;
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Peopledata}\SpecialCharTok{$}\NormalTok{bornUSA }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(Peopledata}\SpecialCharTok{$}\NormalTok{bornUSA }\SpecialCharTok{==} \StringTok{"USA"}\NormalTok{, T, F) }\CommentTok{\# function to identify people born in USA{-} with logical statements}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\item
+  {[}5 + 0 points{]} Create new datasets called Battingdata and
+  Fieldingdata by
+
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \tightlist
+  \item
+    choosing data from the years 1985 and 2015,
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Battingdata }\OtherTok{\textless{}{-}}\NormalTok{ Batting }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(yearID }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\DecValTok{1985}\NormalTok{, }\DecValTok{2015}\NormalTok{)) }\CommentTok{\# filters only two years from data set}
+
+\NormalTok{Fieldingdata }\OtherTok{\textless{}{-}}\NormalTok{ Fielding }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(yearID }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\DecValTok{1985}\NormalTok{, }\DecValTok{2015}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ii. selecting only those variables that for those years have fewer than 25 missing cases, 
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Battingdata }\OtherTok{\textless{}{-}}\NormalTok{ Battingdata[, }\FunctionTok{colSums}\NormalTok{(}\FunctionTok{is.na}\NormalTok{(Battingdata)) }\SpecialCharTok{\textless{}} \DecValTok{25}\NormalTok{] }\CommentTok{\# discards variables where the sum of NAs in them are above 25}
+\NormalTok{Fieldingdata }\OtherTok{\textless{}{-}}\NormalTok{ Fieldingdata[, }\FunctionTok{colSums}\NormalTok{(}\FunctionTok{is.na}\NormalTok{(Fieldingdata)) }\SpecialCharTok{\textless{}} \DecValTok{25}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iii. removing the variable 'G' from the batting dataset and removing the variables "teamID" and "lgID" from both datasets, 
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Battingdata }\OtherTok{\textless{}{-}}\NormalTok{ Battingdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{!}\NormalTok{G }\SpecialCharTok{\&} \SpecialCharTok{!}\NormalTok{lgID }\SpecialCharTok{\&} \SpecialCharTok{!}\NormalTok{teamID) }\CommentTok{\# removing unwanted variables}
+
+\NormalTok{Fieldingdata }\OtherTok{\textless{}{-}}\NormalTok{ Fieldingdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{!}\NormalTok{lgID }\SpecialCharTok{\&} \SpecialCharTok{!}\NormalTok{teamID)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iv. creating a variable in 'Battingdata' called batav which is equal to the number of hits (H) over the number of at bats (AB) if the number of hits >0, and =0 if H=0.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Battingdata }\OtherTok{\textless{}{-}}\NormalTok{ Battingdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{batav =} \FunctionTok{ifelse}\NormalTok{(H }\SpecialCharTok{!=} \DecValTok{0}\NormalTok{, H }\SpecialCharTok{/}\NormalTok{ AB, }\DecValTok{0}\NormalTok{)) }\CommentTok{\# function to prevent NaN appearing ( division by 0)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\item
+  {[}6 + 0 points{]} Create a dataset `Playerdata' from the dataset
+  `Salaries' by
+
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \tightlist
+  \item
+    selecting data from the years 1985 and 2015,
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Salaries }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(yearID }\SpecialCharTok{\%in\%} \FunctionTok{c}\NormalTok{(}\DecValTok{1985}\NormalTok{, }\DecValTok{2015}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ii. adding all distinct variables from the Fieldingdata, Battingdata and Peopledata datasets,
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{full\_join}\NormalTok{(Fieldingdata) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{full\_join}\NormalTok{(Battingdata) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{full\_join}\NormalTok{(Peopledata) }\CommentTok{\# joining all the data sets, default joins by similar variables ie ("yearID", "playerID", "stint") where appropraiate}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iii. creating a new variable 'allstar' indicating if the player appears anywhere in the AllstarFull dataset,
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{view}\NormalTok{(AllstarFull) }\CommentTok{\# checking the data before using it}
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{allstar =}\NormalTok{ Playerdata}\SpecialCharTok{$}\NormalTok{playerID }\SpecialCharTok{\%in\%}\NormalTok{ AllstarFull}\SpecialCharTok{$}\NormalTok{playerID) }\CommentTok{\# observes and determines similar names present in both data sets}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iv. creating a new variable 'age' equal to each player's age in the relevant year,
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{age =}\NormalTok{ yearID }\SpecialCharTok{{-}}\NormalTok{ birthYear) }\CommentTok{\# simple calculation working out age}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iv. dropping incomplete cases from the dataset,
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{drop\_na}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+v. dropping unused levels of any categorical variable.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Playerdata }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(teamID }\SpecialCharTok{!=} \StringTok{"ANA"}\NormalTok{, teamID }\SpecialCharTok{!=} \StringTok{"FLO"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{droplevels}\NormalTok{()}
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{length}\NormalTok{(Playerdata}\SpecialCharTok{$}\NormalTok{teamID)) }\CommentTok{\# checking if same no. of accounts is still preserved}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+   1982    1982    1982    1982    1982    1982 
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\item
+  {[}4 + 0 points{]} Create a dataset called `TeamSalaries' in which
+  there is a row for each team and each year and the variables are:
+
+  \begin{enumerate}
+  \def\labelenumii{\roman{enumii}.}
+  \tightlist
+  \item
+    `Rostercost' = the sum of all player salaries for the given team in
+    the given year
+  \end{enumerate}
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rostercost }\OtherTok{\textless{}{-}}\NormalTok{ Salaries }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(teamID, yearID) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{Rostercost =} \FunctionTok{sum}\NormalTok{(}\FunctionTok{as.numeric}\NormalTok{(salary)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ii. 'meansalary' = the mean salary for that team that year
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{meansalaries }\OtherTok{\textless{}{-}}\NormalTok{ Salaries }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(teamID, yearID) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{meansalary =} \FunctionTok{mean}\NormalTok{(salary))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+iii. 'rostersize' = the number of players listed that year for that team.
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{rostersize }\OtherTok{\textless{}{-}}\NormalTok{ Salaries }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(yearID, teamID) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}\AttributeTok{rostersize =} \FunctionTok{n}\NormalTok{())}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{TeamSalaries }\OtherTok{\textless{}{-}}\NormalTok{ rostercost }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{full\_join}\NormalTok{(meansalaries) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{full\_join}\NormalTok{(rostersize)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  {[}2 + 0 points{]} Create a dataset `Teamdata' by taking the data from
+  the Teams dataset for the years 1984 to 2016, inclusive and adding to
+  that data the variables in TeamSalaries. Drop any incomplete cases
+  from the dataset.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Teamdata }\OtherTok{\textless{}{-}}\NormalTok{ Teams }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(yearID }\SpecialCharTok{\textgreater{}} \DecValTok{1984} \SpecialCharTok{\&}\NormalTok{ yearID }\SpecialCharTok{\textless{}=} \DecValTok{2016}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# inclusive selection of data between 1984 {-} 2016}
+  \FunctionTok{full\_join}\NormalTok{(TeamSalaries) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{drop\_na}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{simple-linear-regression}{%
+\section{2. Simple Linear Regression}\label{simple-linear-regression}}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  {[}2 + 2 points{]} Create one plot of mean team salaries over time
+  from 1984 to 2016, and another of the log base 10 of team mean
+  salaries over time from 1984 to 2016. Give two reasons why a linear
+  model is more appropriate for log base 10 mean salaries than for raw
+  mean salaries.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Teamdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(yearID, meansalary)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Year"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Mean Salary of Teams"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Change in salary from 1984{-}2016"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_classic}\NormalTok{() }\CommentTok{\# scatter plot}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-19-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Teamdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(yearID, }\FunctionTok{log10}\NormalTok{(meansalary))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Year"}\NormalTok{, }\AttributeTok{y =} \StringTok{"log10(Mean Salary of Teams)"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Change in salary from 1984{-}2016"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-19-2} \end{center}
+
+\hypertarget{a-2a}{%
+\subsection{A 2a)}\label{a-2a}}
+
+i- log10 helps displaying the vast wide range of data better - gives
+better access to small and larger numbers in same plot
+
+ii- shows rate of change in the data, mean salary is rising
+exponentially- log10 makes it linear
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  {[}1 + 3 points{]} Fit a model of \(log_{10}\)(meansalary) as a
+  function of yearID. Write the form of the model and explain what the
+  Multiple R-Squared tells us.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1 }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(}\FunctionTok{log10}\NormalTok{(meansalary) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ yearID, }\AttributeTok{data =}\NormalTok{ Teamdata) }\CommentTok{\# creating linear model}
+\FunctionTok{summary}\NormalTok{(linmod1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Call:
+lm(formula = log10(meansalary) ~ yearID, data = Teamdata)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.66345 -0.11692  0.00644  0.13394  0.55976 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -51.222416   2.310867  -22.17   <2e-16 ***
+yearID        0.028711   0.001152   24.92   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 0.1858 on 652 degrees of freedom
+Multiple R-squared:  0.4878,    Adjusted R-squared:  0.487 
+F-statistic: 620.9 on 1 and 652 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+\hypertarget{form}{%
+\subsubsection{Form}\label{form}}
+
+\[ E(X;y) = b_0 + b_1 \times y_1 = (-51.222416  + 0.028711 \times yearID, 0.1858)  \]
+Multiple R-Squared = 0.4878, this means 48.8 \% of the variation in
+log10(meansalary) is explained by variations of yearID
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  {[}1 + 8 points{]} State and evaluate the four assumptions of linear
+  models for this data.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{gg\_diagnose}\NormalTok{(}\AttributeTok{max.per.page =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-1} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-2} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-3} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-4} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-5} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-6} \end{center}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-21-7} \end{center}
+
+1 - \emph{Linearity} - initial check of scatter plot of meansalary
+against yearID, shows linear rising trend, then post analysis, checking
+scatter plot of distribution of residuals against predictors i.e yearID,
+this data seems fairly linear, has good even spread of points
+throughout, and not favoring to one side
+
+2 - \emph{Normality} - observing the QQ-plot, shows linear trend with a
+straight line majority of the plots so Gaussian, checking histogram also
+gives a normal distribution (bell) curve outline.
+
+3 - \emph{Homoscadasticity} - also observing the scatter plot of
+residuals against yearID, data shows even scattering along the
+trendline, strong evidence of homoscadasticity
+
+4 - \emph{Independence} - checking residual vs order, the predictor is
+independent, looking at snaking
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  {[}3 + 1 points{]} Plot confidence and prediction bands for this
+  model. Colour the points according to who won the World Series each
+  year. Comment on what you find.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{pred1 }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(linmod1, }\AttributeTok{interval =} \StringTok{"prediction"}\NormalTok{) }\CommentTok{\# compute prediction bands}
+\NormalTok{wsteam }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(Teamdata, pred1)}
+\FunctionTok{ggplot}\NormalTok{(wsteam, }\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ yearID, }\AttributeTok{y =} \FunctionTok{log10}\NormalTok{(meansalary), }\AttributeTok{color =}\NormalTok{ WSWin)) }\SpecialCharTok{+} \CommentTok{\# highlights World Series winners}
+  \FunctionTok{geom\_point}\NormalTok{(}\AttributeTok{size =} \DecValTok{1}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_smooth}\NormalTok{(}\AttributeTok{method =}\NormalTok{ lm, }\AttributeTok{color =} \StringTok{"\#2C3E50"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ lwr), }\AttributeTok{color =} \DecValTok{2}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{y =}\NormalTok{ upr), }\AttributeTok{color =} \DecValTok{2}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-22-1} \end{center}
+
+Trend shows that Most of the winners of the World Series have higher
+than average mean salary ( above the trendline)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Teamdata1 }\OtherTok{\textless{}{-}}\NormalTok{ Teamdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(yearID, meansalary, teamID) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{meansalary =} \FunctionTok{log10}\NormalTok{(meansalary))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  {[}1 + 1 points{]} Investigate the points that appear above the top
+  prediction band. What team or teams do they relate to?
+\end{enumerate}
+
+Team NYA is above the predictor line, they pay a lot to their players
+
+\hypertarget{multiple-regression-for-count-data}{%
+\section{3. Multiple regression for Count
+Data}\label{multiple-regression-for-count-data}}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  {[}2 + 2 points{]} Create a histogram of the number of runs scored for
+  players in the Playerdata dataset so each bar is a single value (0,1,2
+  runs, etc). Next create a histogram of the number of runs for all
+  players who have had a hit. Give a domain-based and a data-based
+  reason why it is more reasonable to create a Poisson data for the
+  second set than the first.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(Playerdata}\SpecialCharTok{$}\NormalTok{R,}
+  \AttributeTok{breaks =} \FunctionTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FunctionTok{max}\NormalTok{(Playerdata}\SpecialCharTok{$}\NormalTok{R), }\DecValTok{1}\NormalTok{)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-24-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{hitrun }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(H }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{)}
+\FunctionTok{hist}\NormalTok{(hitrun}\SpecialCharTok{$}\NormalTok{R,}
+  \AttributeTok{breaks =} \FunctionTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FunctionTok{max}\NormalTok{(hitrun}\SpecialCharTok{$}\NormalTok{R), }\DecValTok{1}\NormalTok{)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-25-1} \end{center}
+
+\emph{Domain} - If you don't get a hit, your run is 0 anyway, its not
+appropriate to include people who haven't hit, this skews the results.
+\emph{Data} - The model will be less accurate as the mean and sd of runs
+will be influenced by the 500 players who haven't hit the ball, this
+will influence in wrong predictions and change the uncertainties created
+by Poisson Model.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  {[}3 + 0 points{]} Create a new dataset, OnBase of all players who
+  have had at least one hit. Transform yearID to a factor. Construct a
+  Poisson model, glm1, of the number of runs as a function of the number
+  of hits, the year as a factor, position played and player height and
+  age.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{OnBase }\OtherTok{\textless{}{-}}\NormalTok{ Playerdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(H }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate\_at}\NormalTok{(}
+    \FunctionTok{vars}\NormalTok{(yearID),}
+    \FunctionTok{list}\NormalTok{(factor)}
+\NormalTok{  ) }\CommentTok{\# making yearID a factor}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{glm1 }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(R }\SpecialCharTok{\textasciitilde{}}\NormalTok{ H }\SpecialCharTok{+}\NormalTok{ yearID }\SpecialCharTok{+}\NormalTok{ POS }\SpecialCharTok{+}\NormalTok{ height }\SpecialCharTok{+}\NormalTok{ age, }\AttributeTok{data =}\NormalTok{ OnBase, }\AttributeTok{family =} \StringTok{"poisson"}\NormalTok{)}
+\FunctionTok{summary}\NormalTok{(glm1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Call:
+glm(formula = R ~ H + yearID + POS + height + age, family = "poisson", 
+    data = OnBase)
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-9.1745  -1.5840  -0.2634   1.0653   7.9508  
+
+Coefficients:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  2.494e+00  1.692e-01  14.743  < 2e-16 ***
+H            1.285e-02  8.953e-05 143.571  < 2e-16 ***
+yearID2015   2.231e-02  9.285e-03   2.402  0.01629 *  
+POS2B       -1.152e-02  1.671e-02  -0.689  0.49063    
+POS3B        5.319e-03  1.574e-02   0.338  0.73535    
+POSC        -6.297e-02  2.074e-02  -3.036  0.00239 ** 
+POSOF        6.322e-02  1.319e-02   4.792 1.65e-06 ***
+POSP        -1.171e+00  3.710e-02 -31.556  < 2e-16 ***
+POSSS       -1.123e-02  1.754e-02  -0.640  0.52207    
+height      -3.584e-03  2.241e-03  -1.599  0.10982    
+age          4.693e-03  1.202e-03   3.904 9.47e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for poisson family taken to be 1)
+
+    Null deviance: 38805.9  on 1481  degrees of freedom
+Residual deviance:  5695.8  on 1471  degrees of freedom
+AIC: 12616
+
+Number of Fisher Scoring iterations: 5
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  {[}2 + 4 points{]} Find the p-value for each of the predictor
+  variables in this model using a Likelihood Ratio Test. What hypothesis
+  does each p-value test, and what mathematically does a p-value tell
+  you about a variable? Use this definition to say what is meant by the
+  p-value associated to POS and to the p-value associated to height.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(car)}
+\FunctionTok{Anova}\NormalTok{(glm1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Analysis of Deviance Table (Type II tests)
+
+Response: R
+       LR Chisq Df Pr(>Chisq)    
+H       21541.0  1  < 2.2e-16 ***
+yearID      5.8  1    0.01625 *  
+POS      1584.5  6  < 2.2e-16 ***
+height      2.6  1    0.10994    
+age        15.2  1  9.705e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+\end{verbatim}
+
+In this data ``H''(hits), ``POS'' (position) and ``age'' have
+significantly low p-value, so shows it is a very important variable.
+yearID is also fairly low, shows to be a significant variable but less
+than the previous ones stated. Height, is less significant.
+
+p-value gives the probability of observing the variable at random. POS
+has 2.2e-14 \% chance of occurring and ``height'' has \textasciitilde{}
+11\% chance of observing at random.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  {[}1 + 8 points{]} State the assumptions of Poisson models and check
+  these where possible.
+\end{enumerate}
+
+\emph{Linearity}
+
+\emph{Poisson Response} - response variable is a count, in this case is
+no. of runs
+
+\emph{Independence} - checking residual vs order, the predictors are
+independent, looking at snaking
+
+\emph{Dispersion Test}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(glm1, }\AttributeTok{which =} \DecValTok{3}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{col =} \DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-29-1} \end{center}
+
+Check - using dispersion test, red line is not fully flat but is decent,
+but is above the green line, which means over dispersion is present, but
+this is not bad as it may be due to not including all the important
+predictors in the model.
+
+\emph{Mean = Variance} - no hidden variables
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{OnBase }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ H, }\AttributeTok{y =}\NormalTok{ R, }\AttributeTok{color =} \FunctionTok{factor}\NormalTok{(POS))) }\SpecialCharTok{+}
+  \FunctionTok{geom\_point}\NormalTok{(}
+    \AttributeTok{alpha =} \FloatTok{0.7}\NormalTok{,}
+    \AttributeTok{size =} \DecValTok{1}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-30-1} \end{center}
+
+This plot also shows Poission model, as the data points spread out the
+as more hits are made, but mean is still central.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{OnBase }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(POS, R)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_boxplot}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{geom\_hline}\NormalTok{(}\AttributeTok{yintercept =} \DecValTok{2}\NormalTok{, }\AttributeTok{col =} \StringTok{"red"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-31-1} \end{center}
+
+Shows Position P doesn't contribute to runs much so can be removed
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{glm2 }\OtherTok{\textless{}{-}} \FunctionTok{glm}\NormalTok{(R }\SpecialCharTok{\textasciitilde{}}\NormalTok{ H }\SpecialCharTok{+}\NormalTok{ yearID }\SpecialCharTok{+}\NormalTok{ POS }\SpecialCharTok{+}\NormalTok{ height }\SpecialCharTok{+}\NormalTok{ age, }\AttributeTok{data =}\NormalTok{ OnBase[}\SpecialCharTok{!}\NormalTok{OnBase}\SpecialCharTok{$}\NormalTok{POS }\SpecialCharTok{==} \StringTok{"P"}\NormalTok{, ], }\AttributeTok{family =} \StringTok{"quasipoisson"}\NormalTok{) }\CommentTok{\# changed to quasipoisson due to over dispersion in poison model}
+\FunctionTok{summary}\NormalTok{(glm2)}
+\FunctionTok{plot}\NormalTok{(glm2, }\AttributeTok{which =} \DecValTok{3}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{col =} \DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-32-1} \end{center}
+
+\begin{verbatim}
+Call:
+glm(formula = R ~ H + yearID + POS + height + age, family = "quasipoisson", 
+    data = OnBase[!OnBase$POS == "P", ])
+
+Deviance Residuals: 
+    Min       1Q   Median       3Q      Max  
+-9.0315  -1.4418  -0.1245   1.1243   5.0233  
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)    
+(Intercept)  2.3924385  0.3134600   7.632 4.54e-14 ***
+H            0.0126260  0.0001645  76.761  < 2e-16 ***
+yearID2015   0.0086382  0.0171523   0.504   0.6146    
+POS2B       -0.0094772  0.0306147  -0.310   0.7569    
+POS3B        0.0054076  0.0288156   0.188   0.8512    
+POSC        -0.0677389  0.0379631  -1.784   0.0746 .  
+POSOF        0.0616388  0.0241519   2.552   0.0108 *  
+POSSS       -0.0114126  0.0321225  -0.355   0.7224    
+height      -0.0007420  0.0041536  -0.179   0.8582    
+age          0.0023030  0.0022343   1.031   0.3029    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for quasipoisson family taken to be 3.350388)
+
+    Null deviance: 27235.9  on 1266  degrees of freedom
+Residual deviance:  4619.4  on 1257  degrees of freedom
+AIC: NA
+
+Number of Fisher Scoring iterations: 4
+\end{verbatim}
+
+This is much better than before, the red line is close to the green so
+its ok, slight curve though, but reveals that three was a lot of
+dispersion before.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  {[}2 + 4 points{]} Now create a new model that includes teamID as a
+  random effect. Ensure there are no fit warnings. What does the result
+  tell us about the importance of team on number of runs that players
+  score? Is this a relatively large or small effect? How could we check
+  the statistical significance of this effect in R?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{OnBase\_refined }\OtherTok{\textless{}{-}}\NormalTok{ OnBase }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(}\SpecialCharTok{!}\NormalTok{POS }\SpecialCharTok{==} \StringTok{"P"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{droplevels}\NormalTok{() }\CommentTok{\# dropping Position P, it is unecessary}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{glm3 }\OtherTok{\textless{}{-}} \FunctionTok{glmer}\NormalTok{(R }\SpecialCharTok{\textasciitilde{}}\NormalTok{ H }\SpecialCharTok{+}\NormalTok{ yearID }\SpecialCharTok{+}\NormalTok{ POS }\SpecialCharTok{+}\NormalTok{ height }\SpecialCharTok{+}\NormalTok{ age }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ teamID), }\AttributeTok{data =}\NormalTok{ OnBase\_refined, }\AttributeTok{family =} \StringTok{"poisson"}\NormalTok{, }\AttributeTok{nAGQ =} \DecValTok{0}\NormalTok{) }\CommentTok{\# removing singularities, and using a better algorithm}
+\FunctionTok{summary}\NormalTok{(glm3)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Generalized linear mixed model fit by maximum likelihood (Adaptive
+  Gauss-Hermite Quadrature, nAGQ = 0) [glmerMod]
+ Family: poisson  ( log )
+Formula: R ~ H + yearID + POS + height + age + (1 | teamID)
+   Data: OnBase_refined
+
+     AIC      BIC   logLik deviance df.resid 
+ 10767.4  10824.0  -5372.7  10745.4     1256 
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-6.7582 -1.3658 -0.0841  1.0729  5.8583 
+
+Random effects:
+ Groups Name        Variance Std.Dev.
+ teamID (Intercept) 0.009012 0.09493 
+Number of obs: 1267, groups:  teamID, 33
+
+Fixed effects:
+              Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  2.517e+00  1.770e-01  14.220  < 2e-16 ***
+H            1.276e-02  9.221e-05 138.359  < 2e-16 ***
+yearID2015   1.801e-02  1.019e-02   1.767  0.07726 .  
+POS2B       -8.009e-03  1.699e-02  -0.471  0.63745    
+POS3B        8.517e-03  1.585e-02   0.537  0.59106    
+POSC        -6.795e-02  2.085e-02  -3.258  0.00112 ** 
+POSOF        6.407e-02  1.330e-02   4.818 1.45e-06 ***
+POSSS       -1.194e-02  1.769e-02  -0.675  0.49972    
+height      -2.742e-03  2.335e-03  -1.174  0.24025    
+age          2.092e-03  1.277e-03   1.639  0.10130    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Correlation of Fixed Effects:
+           (Intr) H      yID201 POS2B  POS3B  POSC   POSOF  POSSS  height
+H          -0.035                                                        
+yearID2015 -0.028  0.159                                                 
+POS2B      -0.323 -0.002 -0.028                                          
+POS3B      -0.199  0.024  0.005  0.462                                   
+POSC       -0.134  0.115  0.025  0.341  0.352                            
+POSOF      -0.163  0.027  0.023  0.531  0.544  0.410                     
+POSSS      -0.259  0.005 -0.012  0.445  0.433  0.321  0.503              
+height     -0.962 -0.085 -0.037  0.268  0.148  0.089  0.095  0.195       
+age        -0.233  0.233  0.100  0.124  0.066  0.046  0.098  0.155 -0.005
+\end{verbatim}
+
+Club is not very significant, but can still influence runs scored exp(2
+* 0.09493 ) =1.20908 \textasciitilde{} 95\% Top club to get 1.2 time
+more runs than average club
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  {[}2 + 0 points{]} What is the mean number of runs could you expect
+  30-year old, 72 inch tall outfielders playing for the Baltimore
+  Orioles in 2015 with 20 hits to have scored?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{predict}\NormalTok{(glm3, }\AttributeTok{newdata =} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{age =} \DecValTok{30}\NormalTok{, }\AttributeTok{height =} \DecValTok{72}\NormalTok{, }\AttributeTok{POS =} \StringTok{"OF"}\NormalTok{, }\AttributeTok{teamID =} \StringTok{"BAL"}\NormalTok{, }\AttributeTok{yearID =} \StringTok{"2015"}\NormalTok{, }\AttributeTok{H =} \DecValTok{20}\NormalTok{), }\AttributeTok{type =} \StringTok{"response"}\NormalTok{) }\CommentTok{\# Poisson model so this gives point estimate}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+       1 
+17.67468 
+\end{verbatim}
+
+About 18 runs (rounded up)
+
+\hypertarget{lasso-regression-for-logistic-regression}{%
+\section{4. Lasso Regression for Logistic
+Regression}\label{lasso-regression-for-logistic-regression}}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\tightlist
+\item
+  {[}4 + 0 points{]} Create a new dataset DivWinners by removing all of
+  the variables that are team or park identifiers in the dataset, as
+  well as `lgID', `Rank',`franchID',`divID', `WCWin',`LgWin', and
+  `WSwin'. Split the resulting into a training and a testing set so that
+  the variable `DivWin' is balanced between the two datasets. Use the
+  seed 123.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{DivWinners }\OtherTok{\textless{}{-}}\NormalTok{ Teamdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{c}\NormalTok{(}\DecValTok{2}\SpecialCharTok{:}\DecValTok{5}\NormalTok{, lgID, Rank, franchID, divID, WCWin, LgWin, WSWin, name, park, teamIDBR, teamIDlahman45, teamIDretro)) }\CommentTok{\# removing unwanted columns}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{training.samples }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(DivWinners}\SpecialCharTok{$}\NormalTok{DivWin) }\SpecialCharTok{\%\textgreater{}\%} \CommentTok{\# dividing data}
+  \FunctionTok{createDataPartition}\NormalTok{(}\AttributeTok{p =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{list =}\NormalTok{ F)}
+\NormalTok{train.data }\OtherTok{\textless{}{-}}\NormalTok{ DivWinners[training.samples, ]}
+\NormalTok{test.data }\OtherTok{\textless{}{-}}\NormalTok{ DivWinners[}\SpecialCharTok{{-}}\NormalTok{training.samples, ]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{1}
+\tightlist
+\item
+  {[}4 + 0 points{]} Use the training data to fit a logistic regression
+  model using the `glmnet' command. Plot residual deviance against
+  number of predictors.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runs }\OtherTok{\textless{}{-}} \FunctionTok{as.vector}\NormalTok{(train.data}\SpecialCharTok{$}\NormalTok{R)}
+\NormalTok{runpredict }\OtherTok{\textless{}{-}} \FunctionTok{model.matrix}\NormalTok{(}\SpecialCharTok{\textasciitilde{}}\NormalTok{ . }\SpecialCharTok{{-}} \DecValTok{1}\NormalTok{, train.data[, }\SpecialCharTok{{-}}\FunctionTok{c}\NormalTok{(}\DecValTok{7}\NormalTok{)])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runfit }\OtherTok{\textless{}{-}} \FunctionTok{glmnet}\NormalTok{(runpredict, runs, }\AttributeTok{family =} \StringTok{"poisson"}\NormalTok{) }\CommentTok{\# still count variable so using poisson}
+\FunctionTok{plot}\NormalTok{(runfit, }\AttributeTok{xvar =} \StringTok{"dev"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-39-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(runfit, }\AttributeTok{xvar =} \StringTok{"lambda"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-39-2} \end{center}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  {[}2 + 2 points{]} How many nonzero model coefficients are needed to
+  explain 50\% of the deviance? 60\%? Which coefficients are these in
+  each case?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runfit}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Call:  glmnet(x = runpredict, y = runs, family = "poisson") 
+
+   Df  %Dev Lambda
+1   0  0.00 70.040
+2   1 11.15 63.820
+3   1 20.40 58.150
+4   2 28.46 52.980
+5   2 37.64 48.270
+6   3 45.52 43.990
+7   3 53.09 40.080
+8   3 59.38 36.520
+9   3 64.59 33.270
+10  3 68.91 30.320
+11  3 72.50 27.620
+12  3 75.47 25.170
+13  3 77.94 22.930
+14  3 79.99 20.900
+15  3 81.69 19.040
+16  3 83.09 17.350
+17  3 84.26 15.810
+18  5 85.32 14.400
+19  6 86.38 13.120
+20  6 87.38 11.960
+21  6 88.21 10.900
+22  6 88.90  9.928
+23  6 89.47  9.046
+24  6 89.94  8.242
+25  8 90.40  7.510
+26  9 90.87  6.843
+27  9 91.30  6.235
+28 10 91.68  5.681
+29 11 92.07  5.176
+30 12 92.45  4.716
+31 13 92.80  4.297
+32 13 93.11  3.916
+33 14 93.38  3.568
+34 16 93.64  3.251
+35 16 93.90  2.962
+36 16 94.12  2.699
+37 16 94.30  2.459
+38 19 94.46  2.241
+39 19 94.61  2.042
+40 19 94.73  1.860
+41 18 94.82  1.695
+42 18 94.91  1.544
+43 19 94.97  1.407
+44 20 95.03  1.282
+45 20 95.09  1.168
+46 21 95.14  1.065
+47 21 95.19  0.970
+48 21 95.23  0.884
+49 20 95.27  0.805
+50 21 95.30  0.734
+51 21 95.34  0.669
+52 21 95.37  0.609
+53 22 95.39  0.555
+54 22 95.42  0.506
+55 23 95.43  0.461
+56 27 95.45  0.420
+57 27 95.47  0.383
+58 28 95.49  0.349
+59 29 95.51  0.318
+60 28 95.53  0.289
+61 29 95.56  0.264
+62 29 95.58  0.240
+63 29 95.60  0.219
+64 29 95.61  0.200
+65 30 95.63  0.182
+66 30 95.65  0.166
+67 30 95.67  0.151
+68 29 95.69  0.138
+69 31 95.71  0.125
+70 30 95.72  0.114
+71 30 95.74  0.104
+72 30 95.75  0.095
+73 31 95.76  0.086
+74 32 95.77  0.079
+75 32 95.77  0.072
+76 34 95.78  0.065
+77 34 95.79  0.060
+78 33 95.79  0.054
+79 33 95.79  0.049
+80 33 95.80  0.045
+81 33 95.80  0.041
+82 34 95.80  0.037
+83 33 95.81  0.034
+84 34 95.81  0.031
+\end{verbatim}
+
+\emph{50\%} - 3 variables \emph{60\%} - also 3 variables Model shows
+that 3 variables can explain up to nearly 85\% of the deviance.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runs9 }\OtherTok{\textless{}{-}} \FunctionTok{coef}\NormalTok{(runfit, }\AttributeTok{s =} \FloatTok{20.900}\NormalTok{) }\CommentTok{\# taking lambda at 80\% as only 3 variables from \textasciitilde{} 45{-}85\%}
+\NormalTok{runs9}\SpecialCharTok{@}\NormalTok{Dimnames[[}\DecValTok{1}\NormalTok{]][}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ runs9}\SpecialCharTok{@}\NormalTok{i]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] "(Intercept)" "H"           "HR"          "BB"         
+\end{verbatim}
+
+The variables are H, HR and BB
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{3}
+\tightlist
+\item
+  {[}2 + 1 points{]} Now use cross-validation to choose a moderately
+  conservative model. State the variables you will include.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{)}
+\NormalTok{runscv }\OtherTok{\textless{}{-}} \FunctionTok{cv.glmnet}\NormalTok{(runpredict, runs)}
+\FunctionTok{plot}\NormalTok{(runscv) }\CommentTok{\# cross validation method}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-42-1} \end{center}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runs99 }\OtherTok{\textless{}{-}} \FunctionTok{coef}\NormalTok{(runfit, }\AttributeTok{s =}\NormalTok{ runscv}\SpecialCharTok{$}\NormalTok{lambda}\FloatTok{.1}\NormalTok{se)}
+\FunctionTok{setdiff}\NormalTok{(runs99}\SpecialCharTok{@}\NormalTok{Dimnames[[}\DecValTok{1}\NormalTok{]][}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ runs99}\SpecialCharTok{@}\NormalTok{i], runs9}\SpecialCharTok{@}\NormalTok{Dimnames[[}\DecValTok{1}\NormalTok{]][}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ runs9}\SpecialCharTok{@}
+\NormalTok{i])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] "yearID"     "W"          "L"          "X2B"        "X3B"       
+ [6] "SB"         "HBP"        "SF"         "ERA"        "SHO"       
+[11] "SV"         "IPouts"     "HRA"        "SOA"        "FP"        
+[16] "attendance" "BPF"        "rostersize"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{runsmax }\OtherTok{\textless{}{-}} \FunctionTok{coef}\NormalTok{(runfit, }\AttributeTok{s =}\NormalTok{ runscv}\SpecialCharTok{$}\NormalTok{lambda.min)}
+\NormalTok{runsmax}\SpecialCharTok{@}\NormalTok{Dimnames[[}\DecValTok{1}\NormalTok{]][}\DecValTok{1} \SpecialCharTok{+}\NormalTok{ runsmax}\SpecialCharTok{@}\NormalTok{i]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+ [1] "(Intercept)" "yearID"      "G"           "Ghome"       "W"          
+ [6] "DivWinN"     "DivWinY"     "AB"          "H"           "X2B"        
+[11] "X3B"         "HR"          "BB"          "SO"          "SB"         
+[16] "CS"          "HBP"         "SF"          "RA"          "ERA"        
+[21] "CG"          "SHO"         "SV"          "IPouts"      "HA"         
+[26] "HRA"         "BBA"         "SOA"         "DP"          "FP"         
+[31] "attendance"  "BPF"         "PPF"         "meansalary"  "rostersize" 
+\end{verbatim}
+
+Using all 18 coefficients, log graph levels off after 18. Using DivWin
+as only random effect (only categorical variable)
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{4}
+\tightlist
+\item
+  {[}4 + 2 points{]} Fit the model on the training data, then predict on
+  the testing data. Plot comparative ROC curves and summaries your
+  findings.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{train.model }\OtherTok{\textless{}{-}} \FunctionTok{lmer}\NormalTok{(R }\SpecialCharTok{\textasciitilde{}}\NormalTok{ H }\SpecialCharTok{+}\NormalTok{ HR }\SpecialCharTok{+}\NormalTok{ BB }\SpecialCharTok{+}\NormalTok{ yearID }\SpecialCharTok{+}\NormalTok{ W }\SpecialCharTok{+}\NormalTok{ L }\SpecialCharTok{+}\NormalTok{ SB }\SpecialCharTok{+}\NormalTok{ HBP }\SpecialCharTok{+}\NormalTok{ SF }\SpecialCharTok{+}\NormalTok{ ERA }\SpecialCharTok{+}\NormalTok{ SHO }\SpecialCharTok{+}\NormalTok{ SV }\SpecialCharTok{+}\NormalTok{ IPouts }\SpecialCharTok{+}\NormalTok{ HRA }\SpecialCharTok{+}\NormalTok{ SOA }\SpecialCharTok{+}\NormalTok{ FP }\SpecialCharTok{+}\NormalTok{ attendance }\SpecialCharTok{+}\NormalTok{ BPF }\SpecialCharTok{+}\NormalTok{ rostersize }\SpecialCharTok{+}\NormalTok{ X2B }\SpecialCharTok{+}\NormalTok{ X3B }\SpecialCharTok{+}\NormalTok{ (}\DecValTok{1} \SpecialCharTok{|}\NormalTok{ DivWin), }\AttributeTok{data =}\NormalTok{ train.data) }\CommentTok{\# model with all variables}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{predtrain }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(train.model, }\AttributeTok{type =} \StringTok{"response"}\NormalTok{, }\AttributeTok{nAGQ =} \DecValTok{0}\NormalTok{)}
+\NormalTok{predtest }\OtherTok{\textless{}{-}} \FunctionTok{predict}\NormalTok{(train.model, }\AttributeTok{newdata =}\NormalTok{ test.data, }\AttributeTok{type =} \StringTok{"response"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{predictions }\OtherTok{\textless{}{-}}\NormalTok{ train.model }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{predict}\NormalTok{(test.data) }\CommentTok{\# prediction on test data}
+\FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{R2 =} \FunctionTok{R2}\NormalTok{(predictions, test.data}\SpecialCharTok{$}\NormalTok{R),}
+  \AttributeTok{RMSE =} \FunctionTok{RMSE}\NormalTok{(predictions, test.data}\SpecialCharTok{$}\NormalTok{R),}
+  \AttributeTok{MAE =} \FunctionTok{MAE}\NormalTok{(predictions, test.data}\SpecialCharTok{$}\NormalTok{R)}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+         R2     RMSE      MAE
+1 0.9547422 18.86075 14.70722
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sqrt}\NormalTok{(}\FloatTok{0.9547422}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 0.9771091
+\end{verbatim}
+
+R2 is 95, which means there is very good correlation of about 0.98
+between predicted and the actual runs on testing set.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{roctrain }\OtherTok{\textless{}{-}} \FunctionTok{roc}\NormalTok{(}\AttributeTok{response =}\NormalTok{ train.data}\SpecialCharTok{$}\NormalTok{R, }\AttributeTok{predictor =}\NormalTok{ predtrain, }\AttributeTok{plot =}\NormalTok{ T, }\AttributeTok{main =} \StringTok{"ROC Curve for prediction of Runs"}\NormalTok{, }\AttributeTok{auc =}\NormalTok{ T)}
+\FunctionTok{roc}\NormalTok{(}\AttributeTok{response =}\NormalTok{ test.data}\SpecialCharTok{$}\NormalTok{R, }\AttributeTok{predictor =}\NormalTok{ predtest, }\AttributeTok{plot =}\NormalTok{ T, }\AttributeTok{auc =}\NormalTok{ T, }\AttributeTok{add =}\NormalTok{ T, }\AttributeTok{col =} \DecValTok{2}\NormalTok{)}
+\FunctionTok{legend}\NormalTok{(}\DecValTok{0}\NormalTok{, }\FloatTok{0.4}\NormalTok{, }\AttributeTok{legend =} \FunctionTok{c}\NormalTok{(}\StringTok{"training"}\NormalTok{, }\StringTok{"testing"}\NormalTok{), }\AttributeTok{fill =} \DecValTok{1}\SpecialCharTok{:}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{B720039_files/figure-latex/unnamed-chunk-49-1} \end{center}
+
+\begin{verbatim}
+Call:
+roc.default(response = test.data$R, predictor = predtest, auc = T,     plot = T, add = T, col = 2)
+
+Data: predtest in 1 controls (test.data$R 513) < 1 cases (test.data$R 595).
+Area under the curve: 1
+\end{verbatim}
+
+These two curves are almost identical ,right on top of each other, so it
+indicates that the model did not overfit the data.
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{5}
+\tightlist
+\item
+  {[}4 + 2 points{]} Find Youden's index for the training data and
+  calculate confusion matrices at this cutoff for both training and
+  testing data. Comment on the quality of the model for prediction in
+  terms of false negative and false positive rates for the testing data.
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{youdenrun }\OtherTok{\textless{}{-}} \FunctionTok{coords}\NormalTok{(roctrain, }\StringTok{"b"}\NormalTok{, }\AttributeTok{best.method =} \StringTok{"youden"}\NormalTok{, }\AttributeTok{transpose =} \ConstantTok{TRUE}\NormalTok{)}
+\NormalTok{youdenrun}
+\NormalTok{youdenrun[}\DecValTok{2}\NormalTok{] }\SpecialCharTok{+}\NormalTok{ youdenrun[}\DecValTok{3}\NormalTok{] }\CommentTok{\# gives specificity and sensitivity}
+
+\NormalTok{roctrain}\SpecialCharTok{$}\NormalTok{auc}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+  threshold specificity sensitivity 
+   511.9574      1.0000      1.0000 
+specificity 
+          2 
+Area under the curve: 1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(train.model)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Linear mixed model fit by REML ['lmerMod']
+Formula: R ~ H + HR + BB + yearID + W + L + SB + HBP + SF + ERA + SHO +  
+    SV + IPouts + HRA + SOA + FP + attendance + BPF + rostersize +  
+    X2B + X3B + (1 | DivWin)
+   Data: train.data
+
+REML criterion at convergence: 4601.3
+
+Scaled residuals: 
+    Min      1Q  Median      3Q     Max 
+-3.5327 -0.6139 -0.0568  0.5922  3.5194 
+
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ DivWin   (Intercept)   0.6251  0.7906 
+ Residual             346.1235 18.6044 
+Number of obs: 524, groups:  DivWin, 2
+
+Fixed effects:
+              Estimate Std. Error t value
+(Intercept)  1.003e+03  4.876e+02   2.058
+H            4.006e-01  1.962e-02  20.416
+HR           6.806e-01  3.799e-02  17.917
+BB           2.411e-01  1.572e-02  15.341
+yearID      -1.125e-01  2.198e-01  -0.512
+W            3.361e+00  7.818e-01   4.299
+L            2.997e-01  7.471e-01   0.401
+SB           7.331e-02  2.751e-02   2.665
+HBP          2.350e-01  6.242e-02   3.765
+SF           4.862e-01  1.171e-01   4.153
+ERA          2.561e+01  4.369e+00   5.863
+SHO         -5.030e-01  2.927e-01  -1.718
+SV          -1.168e+00  1.689e-01  -6.917
+IPouts      -9.027e-02  2.771e-02  -3.258
+HRA          9.223e-02  4.999e-02   1.845
+SOA         -2.808e-02  9.599e-03  -2.925
+FP          -9.464e+02  3.591e+02  -2.635
+attendance  -2.800e-06  1.414e-06  -1.980
+BPF          2.989e-01  1.757e-01   1.702
+rostersize   4.711e-01  3.219e-01   1.463
+X2B          1.222e-01  4.045e-02   3.021
+X3B          4.983e-01  1.023e-01   4.868
+fit warnings:
+Some predictor variables are on very different scales: consider rescaling
+\end{verbatim}
+
+\begin{enumerate}
+\def\labelenumi{\alph{enumi}.}
+\setcounter{enumi}{6}
+\tightlist
+\item
+  {[}5 + 1 points{]} Calculate the sensitivity+specificity on the
+  testing data as a function of divID and plot as a barchart. Is the
+  prediction equally good for all divisions?
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{DivWinners2 }\OtherTok{\textless{}{-}}\NormalTok{ Teamdata }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{c}\NormalTok{(}\DecValTok{2}\SpecialCharTok{:}\DecValTok{4}\NormalTok{, lgID, Rank, franchID, WCWin, LgWin, WSWin, name, park, teamIDBR, teamIDlahman45, teamIDretro)) }\CommentTok{\# removing unwanted columns}
+\CommentTok{\# where I gave up}
+\end{Highlighting}
+\end{Shaded}
+
+
+\end{document}

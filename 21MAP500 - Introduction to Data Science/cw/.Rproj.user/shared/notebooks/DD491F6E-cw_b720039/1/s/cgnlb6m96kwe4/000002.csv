@@ -1,0 +1,8 @@
+"0","nasa_co2 %>%"
+"0","  ggplot(mapping = aes(x = date, y =co2)) +"
+"0","  geom_line()+"
+"0","  labs("
+"0","  caption = ""nasa_co2"","
+"0","  x = ""Date"","
+"0","  y = ""average global CO2 level in parts per million (ppm)."""
+"0","  )"

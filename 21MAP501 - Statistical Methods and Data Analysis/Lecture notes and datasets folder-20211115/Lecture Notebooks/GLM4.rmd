@@ -1,0 +1,306 @@
+---
+title: "Generalised Linear Models 4:  Poisson and other count models, and choosing variables"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+
+```{r, message = FALSE,error=FALSE,comment=FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("AmesHousing")
+library("rcompanion")
+library("ggcorrplot")
+library("corrr")
+```
+
+```{r}
+playerstats <- clean_names(read_csv(here("data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+```
+
+```{r}
+ames<-make_ames()
+```
+
+# Section 7:  Poisson models
+
+Poisson models are used when the response variable of interest is a count variable (no chihuahas, 1 chihuahua, 2 chihuahuas, 3 chihuahuas, etc).  Even though counts are numbers, we can't model them using a Gaussian model because a count can't be a fraction, just a whole number.  So we need to use a distribution that will only predict whole number values (a _discrete distribution_).  Note that although the predictions have to be whole numbers, the expected value $E(X)$ for a Poisson variable $X$ _can_ be a fraction, just as the average of a set of whole numbers can be.  
+
+A second thing about counts is that they have to be > 0.  You can't have -1 chihuahua.  So if $X$ is a Poisson variable, then $E(X)>0$ as well.  This means we need a link function that takes the positive numbers to the set of all numbers, so that it can map to the set of numbers that can arise on the right (linear) side of the glm equation.  This is why we use the link g=log, since log takes any positive number as input, and its responses can be any real number.
+
+So the general form of a Poisson model is:
+$$
+\log(E(X)) = b_0 + b_1y_1+ \cdots + b_ky_k.
+$$
+
+Poisson distributions have just one parameter, so we can also write:
+$$
+X \sim {\rm Pois}(\exp(b_0 + b_1y_1+ \cdots + b_ky_k))
+$$
+
+## 7.1: Aside  
+
+You may notice here that the variables we have considered as response variables for the Gaussian models above, like Diameter and Volume, _also_ have to be positive numbers, so their expected values should also always be positive, unlike the right hand sides of the model equations, which in principle could be negative.  And yet, we used a constant link function, so it doesn't make these two sides compatible.
+
+This is a good observation, and relates to a subtle point.  This is that _models are only really valid around the values of the variables that were used to create them_.  So for the trees, for instance, where we are predicting Diameter from Height, the minimal height measured was 63 feet and the maximal height was 87.  So we only really expect our model to work well in that range, or maybe just slightly outside it.  
+
+If we go back to the first model we constructed:
+$$
+E(X) =-6.1884 + 0.255\times {\rm Height},
+$$
+
+we can see that for heights of less than about 24 feet, the average predicted Diameter is negative, which of course doesn't make sense.  What this tells us is that our model certainly breaks down before we get that far below the 63 minimum height on which the model was based.
+
+It shouldn't surprise us that models are only useful for certain ranges of values--think of gravity.  As long as we are talking about any relatively small object (a basketball, a teacup) being attracted to a fixed large object (Earth) we can think of this as gravity as giving a constant acceleration of -9.8 m/s^2. But this model wouldn't work if we were on another planet--the constant would be different.  And if we are talking about two very large objects, like the Sun and the various planets, rather than one large object and various small ones (a basketball)  then the model isn't constant at all, but instead also depends upon the distance between the two objects. 
+
+## 7.2:  Some count data
+The datasets we have used so far don't have a good count variable, so we will look at a new dataset.  This is a dataset from 2019-20 of player statistics from the Premier League.  The dataset, called, england-premier-league-players-2018-to-2019-stats.csv, is available from the Learn page, or you can download it and similar datasets [here](https://footystats.org/download-stats-csv).
+
+We can have a look at it:
+```{r}
+playerstats
+```
+
+The variable "goals_overall" is a good example of a count variable.  We can imagine creating a model for goals_overall depending on the continuous predictor, "minutes_played_overall" and the categorical predictor, "position".
+
+First let's have a look at some plots.
+```{r}
+playerstats %>% ggplot(aes(position, goals_overall))+
+  geom_boxplot()+
+  geom_hline(yintercept=2,col="red")
+```
+
+You can notice for each position with the exception of Goalkeeper, the bulk of the data is near zero, with even half of forwards scoring 2 or fewer goals (red line).  On the other hand, some players (the dots), score many more.  This is typical of Poisson distributed variables--they are often clustered near zero with long "tails" into higher numbers.  We can also look at the goals for Forwards as a histogram:
+```{r}
+playerstats %>% filter(position=="Forward")  %>%
+  ggplot(aes(goals_overall))+
+  geom_histogram(binwidth = 1)+
+  labs(x="Number of goals scored",y="Frequency",title="Goals scored by forwards")
+```
+
+Now look at goals scored versus minutes played for each position:
+```{r}
+playerstats %>% ggplot(aes(x=minutes_played_overall,y=goals_overall,colour = factor(position)))+
+  geom_point()
+```
+
+We can that for each group other than goalkeepers, as minutes played increases, the spread gets further and further up the number of goals.  Unlike with Gaussian models, we _do not_ expect the spread to be constant in the predictor, because in Poisson distributions, variance=mean, and we expect these both to depend on the (continuous) predictor.  Instead, we will have to examine the variance=mean assumption for our data later, and if not, consider how to deal with _overdispersion_ or possibly _underdispersion_.
+
+## 7.3:  Fitting a Poisson model
+
+To fit a Poisson model, we use basically the same command as before, but with family="poisson".  As with the glm command for logistic regression, the program knows automatically to use a log link.
+```{r}
+poissonmod<-glm(goals_overall~minutes_played_overall+position,data=playerstats,family="poisson")
+summary(poissonmod)
+```
+
+## 7.4:  Evaluating the dispersion assumption 
+We would like to see if the assumption that variance=mean is reasonable for this dataset.  To do this we will create a plot of the absolute value of residuals versus predicted means, which should look flat, and hover around 0.8 (the green line).  Note that the ggplot version of the diagnostic plots only works for Gaussian family, so instead we use the following:
+```{r}
+plot(poissonmod,which=3)
+abline(h=0.8,col=3)
+```
+
+This plot (the red line) definitely isn't flat, but it seems we may be running into trouble due to the goalkeepers, who are really not relevant to goal scoring activity.  So let's build a new model without them.
+
+```{r}
+poissonmod2<-glm(goals_overall~minutes_played_overall+position,data=playerstats[!playerstats$position=="Goalkeeper",],family="poisson")
+summary(poissonmod2)
+```
+
+```{r}
+plot(poissonmod2,which=3)
+abline(h=0.8,col=3)
+```
+
+This certainly looks better, but the red line is still not flat, and it rises above 0.8.  This suggests a slight _overdispersion_ in the data that increases linearly as the prediction increases. If the red line were under the green one, it would be _underdispersed_.  Overdispersion is pretty common when we have not accounted for all of the important predictors in our model.  In this case, the overdispersion isn't too bad, but we may still want to tweak our results.
+
+If our main goal for analysis is to summarise our data, eg, answer questions such as, "On average, how many more goals do we expect a forward to score than a midfielder for the same number of minutes of play?" then we are really just interested in ensuring that our estimates of the model coefficients are good.  When a model is over or underdispersed, these can get thrown off.  We will come back to this shortly in the section on confidence intervals.  
+
+The other assumptions of Poisson models are similar to those for Gaussian models, and evaluated in the same way:
+
+*Linearity*: we can evaluate this looking at the (deviance) residuals vs fitted and seeing if the plot looks fairly flat.  You can compare the red line to the black dotted one.  Here it looks pretty good.
+
+```{r}
+plot(poissonmod2,which=1)
+```
+
+*Distribution*: for deviance residuals, we again investigate the qqplot. This isn't great, so we may want to use robust confidence intervals later.
+
+```{r}
+plot(poissonmod2,which=2)
+```
+
+
+*Independence*: We again investigate (deviance) residuals as a function of order of datapoints and look for evidence of "snaking".  We don't have a natural order in this dataset, so again can't investigate.
+
+
+
+## 7.5:  Other count models
+
+Another possibility if the dispersion assumption is not satisfied is to fit a different model for counts in which the variance (dispersion) is not assumed to be the same as the mean.  So this is a model with a hidden dispersion parameter that can be used for overdispersed count data.  There are two standard models that do this.  _Quasipoisson_ models assume that the dispersion is a _linear_ function of the mean, so this would be appropriate for our model above, while _Negative Binomial_ models assume that dispersion is a _quadratic_ function of the mean, so if the red line looked more like an upward parabola.  For underdispersed data, where the red line lies below the green line, a _generalised Poisson_ model may be used.
+
+There are often mechanisms at work in count data that mean that a none of these four models is appropriate.  These include for example:
+
+i.  The dataset consists of members of two groups, and only one of those groups can achieve a nonzero count.  For example, imagine a set of visitors to Blackpool Pleasure Beach amusement park.  We could ask visitors all to record how many times they went on "The Big One" roller coaster.  This roller coaster has a height limit of 1.32 meters.  So anyone responding who is under that height will automatically have zero rides, whereas individuals above that height limit may have zero or a positive number of rides. This is called _zero inflation_.
+
+ii. The dataset consists of members of two groups, one of which group all have a zero count and the other group all have nonzero counts.  For example, imagine a set of customers at a grocery store.  For each one, we count the number of apples purchased.  In reality, there are customers who have purchased apples (some) and those who have not (most).  Among those who have, they may have purchased any _positive_ number of apples.  This is called a _hurdle model_.
+
+iii. Having a nonzero response for the count data is a condition for inclusion in the dataset.  For example, a study about patients in an obstetrics ward may look at the number of pregnancies an individual has had.  However, only individuals who have had at least one pregnancy will be seen on an obstetrics ward, thus number of pregnancies on this population will be zero truncated.
+
+Fitting a quasiPoisson model is pretty straightforward:
+```{r}
+poissonmod3<-glm(goals_overall~minutes_played_overall+position,
+                 data=playerstats[!playerstats$position=="Goalkeeper",],family="quasipoisson")
+summary(poissonmod3)
+```
+Note that the estimated dispersion parameter, 1.80585, is indeed greater than 1, confirming mild overdispersion.  Note also that the model coefficients are the same as for the Poisson model--only the dispersion estimate has changed.
+
+We will not cover the other types of model here, but it is useful to be aware of them when considering count data.  
+
+# Section 8:  Considerations when deciding right side of model
+
+## 8.1:  Dimensionality
+
+When we build a glm (or an lm), we have a certain number of coefficients, or parameters, that appear in the equation, and these are estimated in the "model fitting" procedure we use when we use the glm or lm commands.
+
+$$
+g(E(X;y))= b_0 + b_1x_1 + ... + b_nx_n
+$$
+Here, there are $n+1$ parameters to estimate.  General rule of thumb:  we need at least 15 cases in our data for each parameter in order even to obtain stable estimates of the parameters.  If you have fewer than this, you will expect the parameter estimates to vary dramatically as your sample varies.
+
+So, before you start out even thinking about your model, it is useful to estimate how many parameters you can "afford" in your final model.
+
+* One parameter is automatic as the $b_0$
+* Each covariate (numerical predictor) yields a single parameter.
+* Each factor yields (k-1) parameters, where k=number of levels.
+* If you include interactions, you have to add additional parameters for the interaction terms.
+
+Additionally, if your response variable is a factor, you need not only 15 cases, but 15 cases PER GROUP in the response.
+
+So, for example, in the AmesHousing dataset, if we want a model of sale price, and we put all of the variables into the model, we would have:
+
+```{r}
+1 + 15 + 6 + 1 +1 +1+2+3+3+2+4+2+28+8+4+7+9+9+1+1+5+7+15+16+4+1+3+4+5+5+5+4+6+1+6+1+1+1+5+4+1+5+1+1+1+1+1+1+1+1+1+1+4+1+7+1+5+6+3+1+1+5+5+2+1+1+1+1+1+1+4+4+5+1+1+1+9+5+1+1
+```
+302 parameters to estimate.  So we would need at least
+```{r}
+302*15
+```
+cases in order to fit the model.  So we don't have enough.  The largest model we might possibly be able to build would have
+```{r}
+2930/15
+```
+About 195 parameters.  If we want to have smaller confidence intervals for our results, we would want many fewer parameters. (The more cases/parameter, the smaller the confidence intervals become).
+
+This is why amongst "large data" sets, those which are wide (lots of parameters) and short (not many cases) are the most problematic.  To work with such datasets, we need ways to reduce dimensions (ie, eliminate some variable or parameters in our model).
+
+The rest of this module will be spent learning ways to reduce the dimensions in wide, short datasets.
+
+## 8.2:  Missingness
+
+If there are variables for which a reasonably large set of cases are missing, remove them.  How many cases missing is too many?  You will not be surprised to hear this depends.
+
+The most important thing to ask is:  how important is that particular variable to the question you are trying to answer?
+Eg, if you want to understand the effect of walking at least 10000 steps/day on blood pressure, but you recognise that to understand this, you need to control for several other things, e.g., biological sex, weight, age, etc.  If number of steps per day is missing even for half of the cases, you still need to use it.  You just only have half the data you thought.
+
+** You can't remove a variable that is central to your investigation **
+
+The most conservative way to do this is to rank variables in terms of missingness, from least missing to most missing.  Then see how many complete cases there are in your data when you include more and more variables with missing data.  Choose some threshold that will give you a reasonable number of complete cases for "most of" the variables of interest.
+
+It turns out that there are other ways (which we won't talk about in this module) to handle missing data other than just using complete cases (imputation).  And in that case, you need to make a judgement.  
+
+Rule of thumb:  None of the variables should be missing more than a quarter of cases, and most should be missing no more than 10%.
+
+But in this module, we'll use the conservative way because we don't know imputation.
+
+The two issues with just removing incomplete cases are
+1) results in few cases
+2) Sometimes missingness is "informative"
+
+Eg, suppose you have a dataset with a variable that is "days to recovery from coronavirus".  There will be cases where this is missing, because people haven't yet recovered ("long covid" cases).  If we remove cases where "days to recovery" is missing, we are preferentially removing cases corresponding to individuals for whom the illness has lasted a long time.  So doing this will cause us to underestimate the average length of infection from covid.  Even if length of illness wasn't the target response, it may still be important for the other variables.  Eg, suppose target was number of days in ICU, and all patients had left ICU, removing long covid cases would skew your results.  In that case, you might be better off removing the variable than the cases.
+
+## 8.3:  Correlations among predictors
+
+When predictor variables are strongly correlated, they will carry similar information about the response.  So we can eliminate one of a pair of strongly correlated variables without losing too much information.
+
+To do this, we first want to calculate a pairwise association between all variables in a data-frame. In particular nominal vs nominal with Chi-square, numeric vs numeric with Pearson correlation, and nominal vs numeric with ANOVA.
+Adopted from https://stackoverflow.com/a/52557631/590437
+```{r}
+mixed_assoc = function(df, cor_method="spearman", adjust_cramersv_bias=TRUE){
+    df_comb = expand.grid(names(df), names(df),  stringsAsFactors = F) %>% rlang::set_names("X1", "X2")
+
+    is_nominal = function(x) class(x) %in% c("factor", "character")
+    # https://community.rstudio.com/t/why-is-purr-is-numeric-deprecated/3559
+    # https://github.com/r-lib/rlang/issues/781
+    is_numeric <- function(x) { is.integer(x) || is_double(x)}
+
+    f = function(xName,yName) {
+        x =  pull(df, xName)
+        y =  pull(df, yName)
+
+        result = if(is_nominal(x) && is_nominal(y)){
+            # use bias corrected cramersV as described in https://rdrr.io/cran/rcompanion/man/cramerV.html
+            cv = cramerV(as.character(x), as.character(y), bias.correct = adjust_cramersv_bias)
+            data.frame(xName, yName, assoc=cv, type="cramersV")
+
+        }else if(is_numeric(x) && is_numeric(y)){
+            correlation = cor(x, y, method=cor_method, use="complete.obs")
+            data.frame(xName, yName, assoc=correlation, type="correlation")
+
+        }else if(is_numeric(x) && is_nominal(y)){
+            # from https://stats.stackexchange.com/questions/119835/correlation-between-a-nominal-iv-and-a-continuous-dv-variable/124618#124618
+            r_squared = summary(lm(x ~ y))$r.squared
+            data.frame(xName, yName, assoc=sqrt(r_squared), type="anova")
+
+        }else if(is_nominal(x) && is_numeric(y)){
+            r_squared = summary(lm(y ~x))$r.squared
+            data.frame(xName, yName, assoc=sqrt(r_squared), type="anova")
+
+        }else {
+            warning(paste("unmatched column type combination: ", class(x), class(y)))
+        }
+
+        # finally add complete obs number and ratio to table
+        result %>% mutate(complete_obs_pairs=sum(!is.na(x) & !is.na(y)), complete_obs_ratio=complete_obs_pairs/length(x)) %>% rename(x=xName, y=yName)
+    }
+
+    # apply function to each variable combination
+    map2_df(df_comb$X1, df_comb$X2, f)
+}
+```
+
+```{r}
+varassoc<-mixed_assoc(ames)
+varassoc
+```
+```{r}
+varassoc[varassoc$assoc>0.8 & !(varassoc$x==varassoc$y),]
+```
+
+So, for example, if we are going to include Neighborhood, we can get rid of Year_Built, Latitude, Longitude.  On Monday, we will talk about a way to reduce dimension for the Neighborhood variable.
+
+On the other hand, as Overall_Qual is strongly associated to Sale_Price, we really want to keep that variable in, since Sale_Price is our response!
+
+When choosing which of two strongly correlated variables to leave in, ask 1) how many parameters do I save with each? 2) which is more strongly correlated to the response?
+
+So, eg, we would prefer to leave in Misc_Val and remove Misc_Feature because Misc_Val is a covariate, and only requires 1 parameter, whereas Misc_Feature is a factor and requires 5 parameters.
+
+```{r}
+varassoc[varassoc$x=="Sale_Price",]
+```
+According to correlation with Sale_Price, Misc_Feature is a bit more correlated than Misc_Value, but not enough to overcome the disadvantage of 4 extra degrees of freedom.
+
+But, eg, if two covariates are strongly correlated and one has a bit more correlation with the reponse, we would prefer to use that one and eliminate the other.
+

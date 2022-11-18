@@ -1,0 +1,317 @@
+---
+title: "Generalised Linear Models, 6:  Statistical significance and model quality"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+
+# Preamble
+```{r, message = FALSE,comment=FALSE}
+library("MASS")
+library("sandwich")
+library("investr")
+library("car")
+library("rio")
+library("pROC")
+library("nnet")
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("rcompanion")
+library("ggcorrplot")
+library("corrr")
+library("effects")
+library("caret")
+
+```
+
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  dplyr::select(Height,Diameter,Volume) %>%
+  mutate(logvol=log(Volume),logheight=log(Height),logdiam=log(Diameter))
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+```
+
+```{r}
+playerstats <- clean_names(read_csv(here("data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+nongkstats<-playerstats %>% filter(position !="Goalkeeper") %>%
+                            droplevels()
+```
+
+
+# Section 9:  Statistical significance and other indicators of model quality
+
+So far, we have looked at a set of models in which we chose some variables and fit the model to describe their relationship.  In general, however, the process of statistical modelling involves a response variable we want to predict well, and determining what combination of predictors does the best job of this.  In order to choose among models, we need methods for comparing their quality.  There are three main tools for doing this, which we will learn about today.  
+
+## 9.1:  Analysis of variance/deviance
+
+The first comparison method for models involves analysis of variance (in Gaussian models) or deviance (for logistic, multinomial, Poisson or quasiPoisson models).  This techique is used to compare two *nested* models--that is, a "full" model with more predictors as compared to a "reduced" model in which some of those predictors are left out.  It is a measure of how much better of a model we get when we add those extra predictors.  In particular, it relates to the concept of *statistical significance*, and tests the alternative hypothesis, represented by the full model, against a null hypothesis represented by the reduced model (i.e., the hypothesis that the coefficients of the extra variables are all equal to zero).  If the resulting p-value is small, this suggests that the full model is better, whereas if it is large, the reduced model is better.
+
+### 9.1.1:  Analysis of variance for Gaussian linear models
+Consider our very first model, which studied tree diameter as a function of tree height.  If we want to know if there is evidence that tree height is actually a useful predictor of diameter, or if the "null model" with no predictors is better, we use Anova.
+
+```{r}
+Anova(lm(Diameter~Height, data=trees2))
+```
+The p-value we obtain is quite small, 0.002758.  So there is good evidence that the model of diameter that takes account is better than the model where diameter is just predicted by the overall mean diameter for all of the trees in the dataset.
+
+Now let's consider the model we looked for volume as a function of height and diameter for black cherry trees.  Recall that we had to take logs (no pun intended...) for this model.
+
+```{r}
+Anova(lm(logvol~logheight+logdiam,data=trees2))
+```
+Notice we now get a p-value for each of the variables in the full model (again, compared to the null model with no predictors).  These are again very small, so we have good evidence that this model is an improvement over the null model for logvol. 
+
+You will notice here the words "Type II tests" at the top. When the full and reduced model differ by two or more variables, there are three non-equivalent types of ANOVA, called types I, II and III.  We will use type II standardly, which is achieved using the function "Anova" from the car package, rather than the function "anova" from the base package. For a more thorough explanation of the hypothesis tests for each of the types of ANOVA, see [the following](https://mcfromnz.wordpress.com/2011/03/02/anova-type-iiiiii-ss-explained/).  
+
+Of course, we can also compare two models both of which have predictors, so long as the models are nested.  For this, we DO want the little a anova function.  We get out a SINGLE p-value that is the test comparing the null hypothesis of the 1st model against the alternative hypothesis of the second model.
+```{r}
+anova(lm(logvol~1,data=trees2),lm(logvol~logheight+logdiam,data=trees2))
+```
+
+### 9.1.2 Analysis of Deviance for generalised linear models
+
+So you may have noticed that above, I used the command lm instead of glm for these models.  Because these are, in fact, linear models and not only generalised linear, we can do this.  This is what gives us the Anova table.  The analogous thing for generalised linear models is analysis of *deviance* instead of analysis of *variance*.  If we construct our models using the glm command, we will get an Analysis of Deviance model instead.
+
+```{r}
+Anova(glm(Diameter~Height, data=trees2,family="gaussian"))
+```
+Strangely, the p-value that is calculated is slightly different, though the conclusion that the model with Height is better remains the same.  I have to confess, I am not sure why the p-values are different, but I couldn't find an explanation.  I expect generally it is not a big difference.  To remain consistent, from now on we will only use Analysis of Deviance.
+
+So now let's have a look at Analysis of Deviance for our logistic regression model for aspiration as a function of drive, engine size and horsepower.
+```{r}
+linmod5<-glm(as.factor(aspiration)~drive_wheels + engine_size+ horsepower,family=binomial,data=autot)
+Anova(linmod5)
+```
+This suggests that drive_wheels, which has the largest p-value, and is much greater than the usual threshold of 0.05, is not an important predictor of aspiration.  The p-value 0.0498252 here compares the full model given with the reduced model including only engine_size and horsepower.  So we conclude that the reduced model is better.  When we run Anova on the reduced model we get:
+```{r}
+linmod5a<-glm(as.factor(aspiration)~engine_size+ horsepower,family=binomial,data=autot)
+Anova(linmod5a)
+```
+Note that when we remove drive, the p-value for engine size decreases.  This is likely because there is a correlation between engine size and drive.  Engine size is now marginally significant, and horsepower, as before, is quite significant.  By itself, this is probably not enough information to decide if we should retain engine size in the model.
+
+Starting with a full model with all variables and removing the least significant at a time until only significant variables is left is called *stepwise backwards elimination*.  Although it is used sometimes, there are actually statistical reasons why it isn't the best way to decide on a model, especially with large data.  You can read more about this [here] (https://journalofbigdata.springeropen.com/articles/10.1186/s40537-018-0143-6#:~:text=Backward%20elimination%20is%20challenging%20if,than%20the%20number%20of%20observations.&text=As%20with%20forward%20selection%2C%20the,using%20a%20pre%2Dspecified%20criterion.) 
+
+So it is better generally only to use Anova to compare fixed nested models that were proposed through some other method.  We will talk over the next couple of lectures about better ways to arrive at a final model in a modelling process.
+
+
+## 9.2:  R squared, adjusted R squared, AIC
+
+### 9.2.1:  R squared and adjusted R squared for gaussian linear models
+
+R squared and AIC answer the question, "how much of the variability in my response variable is explained by a model?"  For example, for our first (linear) model we get the following.
+```{r}
+summary(lm(Diameter~Height, data=trees2))
+```
+The Multiple R-squared value is 0.2697, so 26.97% of the variance in tree diameter is explained by differences in tree height.  So it is definitely explanatory, but there are clearly a lot of other uncontrolled factors that are also influencing tree diameter.
+
+Now consider our two models for logvol.
+```{r}
+summary(lm(logvol~logheight,data=trees2))
+      
+summary(lm(logvol~logheight+logdiam,data=trees2))
+```
+This says that wheras logheight on its own only explains 42.07% of the variation in logvol, when we add logdiam, this shoots up to 97.77%.  So the fuller model is much more explanatory.  Note that in each case the value Adjusted R-squared is slightly less than Multiple R-squared.  Adjusted R-squared takes account of the fact that even a completely irrelevant variable will generally result in a slightly higher Multiple R-squared value, just because it provides more dimensions with which to fit the data.  So when you report on a final model, report the Multiple R-squared value, but when you compare models, compare the Adjusted R-squared values.  Note that you can do this even when the two models are not nested.
+
+### 9.2.2:  AIC for generalised linear models
+
+For generalised linear models, we use AIC or Akaike Information Criterion to compare models.  Unlike Multiple R-squared, AIC doesn't mean anything on its own--it can only be used for model comparison.  The AIC relates to how much information is lost summarising the original data by the model in question.  This can be explained for linear models through the observation that if two variables have an exactly linear relationship, then we don't have to remember the values of the second variable at all--we can recapture them exactly from the values of the first variable and the model.  Like the Adjusted R-squared value, however, and for the same reason, AIC also includes a penalty for including more predictors.
+
+Now use glm instead of lm to fit these models.
+```{r}
+summary(glm(logvol~logheight,data=trees2,family="gaussian"))
+      
+summary(glm(logvol~logheight+logdiam,data=trees2,family="gaussian"))
+```
+We see that the AIC for the first one is 36.231, and for the second one is -62.711.  The second one is much *lower* and so indicates a *more explanatory* model, i.e., one in which *less information is lost*.  You can read more about AIC [here](https://en.wikipedia.org/wiki/Akaike_information_criterion).
+
+Now let's look at AIC as a way to compare our second logistic models for aspiration to the model without enginesize.
+```{r}
+summary(linmod5a)
+summary(glm(as.factor(aspiration)~ horsepower,family=binomial,data=autot))
+```
+The AIC is slightly larger for the model that includes engine size than for the model without engine size, so it would be a reason to prefer the model with both variables.
+
+
+## 9.3:  Hold-outs and overfitting
+
+A final way to compare models is via their performance on a hold-out set, sometimes called cross-validation.  This method is particularly popular for large datasets.  It involves starting by splitting data into a training and a testing set, often in a 80% to 20% ratio.  A model is built on the training data, then evaluated in terms of its performance on the "hold-out" testing set.  The purpose of this method is to avoid *overfitting*, which is when dimensionality considerations mean that the model will be fit too closely to the specific data on which it is trained, to the point that it picks up relationships that are just coincidental and not reflective of relationships in the larger population.  
+
+### 9.3:  Cross-validation for models with numerical response
+
+When we split the dataset, we want to ensure that the range of the response variable is similar for the training and testing sets.  To do this we use the *caret* package.
+
+Let's try this first for our first model.  Since splitting the dataset will be done randomly, will also use the set.seed command to make the command reproducible.
+
+```{r}
+set.seed(123)
+training.samples <- trees2$Diameter %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- trees2[training.samples, ]
+test.data <- trees2[-training.samples, ]
+```
+Now we create the model on the training data.
+```{r}
+train.model <- lm(Diameter ~ Height, data = train.data)
+summary(train.model)
+```
+
+Now we will make predictions on the testing set.  For models whose response variable is numeric, that is, Gaussian, Poisson or quasipoisson, we consider three performance indicators, R2, RMSE and MAE.
+
+```{r}
+predictions <- train.model %>% predict(test.data)
+data.frame( R2 = R2(predictions, test.data$Diameter),
+            RMSE = RMSE(predictions, test.data$Diameter),
+            MAE = MAE(predictions, test.data$Diameter))
+
+```
+R2:  squared correlation between values predicted by model and true values on the test dataset.  If the model is good, then these should be very strongly correlated, so this will be close to 1.  If the model is not good, it will be close to zero.  
+
+RMSE:  Root Mean Squared Error is the average of the squared differences between the predicted values and the true values.  If the model is perfect, this will =0.  It can be arbitrarily large.
+
+MAE:  Mean Absolute Error:  this is the average absolute value of the differences between predicted and true values.  Again, it will be close to zero for a very good prediction, and larger for bad predictions.  It is less skewed by a few very large differences than RMSE, so is often a better number to use.
+
+We can use these both to evaluate model quality and to compare models.  Let's try that for our quasipoisson model of goalscoring by non-goalkeepers where we either include an interaction between minutes played and position or don't.
+
+```{r}
+poissonmod<-glm(goals_overall~minutes_played_overall+position,data=nongkstats,family="quasipoisson")
+```
+
+```{r}
+set.seed(123)
+training.samples3 <- c(nongkstats$goals_overall) %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data3  <- nongkstats[training.samples3, ]
+test.data3 <- nongkstats[-training.samples3, ]
+```
+Now we create the models on the training data.
+```{r}
+train.model2 <- glm(goals_overall ~ minutes_played_overall+ position, data = train.data3,family="quasipoisson")
+train.model3 <- glm(goals_overall ~ minutes_played_overall*position, data = train.data3,family="quasipoisson")
+```
+
+Now we will make predictions on the testing set and consider three performance indicators, R2, RMSE and MAE.
+
+```{r}
+predictions2 <- train.model2 %>% predict(test.data3)
+data.frame( R2 = R2(predictions2, test.data3$goals_overall),
+            RMSE = RMSE(predictions2, test.data3$goals_overall),
+            MAE = MAE(predictions2, test.data3$goals_overall))
+predictions3 <- train.model3 %>% predict(test.data3)
+data.frame( R2 = R2(predictions3, test.data3$goals_overall),
+            RMSE = RMSE(predictions3, test.data3$goals_overall),
+            MAE = MAE(predictions3, test.data3$goals_overall))
+
+```
+We can see here that the model with the interaction performs slightly better in prediction than the model without interaction performed, so we would prefer the model with interaction.
+
+Note we can also see here that MAE is much smaller than RMSE--this makes sense, because we know that Poisson and quasi-poisson models tend to have a few values that are much larger than the mean.
+
+### 9.3.2 Cross-validation for logistic and multinomial regression
+
+Now let's consider logistic models.  Because the outcome variable is not a number but a category, we will use a different evaluation method, involving ROC curves.  First let's split the data, fit the model to the training data and then predict on the testing data.
+
+```{r}
+autot<-autot[!is.na(autot$horsepower),]
+set.seed(123)
+training.samples4 <- c(autot$aspiration) %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data4  <- autot[training.samples4, ]
+test.data4 <- autot[-training.samples4, ]
+```
+Now we create the model on the training data.
+```{r}
+train.model4 <- glm(as.factor(aspiration)~engine_size+horsepower, data = train.data4,family="binomial")
+```
+
+Next we can predict the values on the training and on the testing data:
+
+```{r}
+predtrain<-predict(train.model4,type="response")
+predtest<-predict(train.model4,newdata=test.data4,type="response")
+```
+
+```{r}
+roctrain<-roc(response=train.data4$aspiration,predictor=predtrain,plot=TRUE,main="ROC Curve for prediction of turbo aspiration",auc=TRUE)
+roc(response=test.data4$aspiration,predictor=predtest,plot=TRUE,auc=TRUE,add=TRUE,col=2)
+legend(0,0.4,legend=c("training","testing"),fill=1:2)
+```
+Note that these two curves are very similar in shape.  This is a good sign that the data is not overfitted to the training data.  
+
+Let's compare this to another model of aspiration in which we just throw in a lot of predictors:
+
+```{r}
+train.model5 <- glm(as.factor(aspiration)~fuel_type+engine_location+engine_size+horsepower+length+peak_rpm+curb_weight+wheel_base+city_mpg, data = train.data4,family="binomial")
+```
+
+Next we can predict the values on the training and on the testing data:
+
+```{r}
+predtrain5<-predict(train.model5,type="response")
+predtest5<-predict(train.model5,newdata=test.data4,type="response")
+```
+
+```{r}
+roctrain2<-roc(response=train.data4$aspiration,predictor=predtrain5,plot=TRUE,main="ROC Curve for prediction of turbo aspiration",auc=TRUE)
+roc(response=test.data4$aspiration,predictor=predtest5,plot=TRUE,auc=TRUE,add=TRUE,col=2)
+legend(0,0.4,legend=c("training","testing"),fill=1:2)
+```
+Here we see a gap between the black (training) roc and the red (testing) roc, which indicates a degree of overfitting of this model (though to be honest, it isn't as bad as I expected).
+
+With multinomial regression, you can do the same sort of thing, with comparing confusion matrices for the model fit on training vs testing data.
+Again, you would be wary of a model whose sum of sensitivities was much greater on the training than on the testing data.
+
+Recall our multinomial model of drive wheels.  We first need to split our data according to the new response variable.
+```{r}
+set.seed(123)
+training.samples5 <- c(autot$drive_wheels) %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data5  <- autot[training.samples5, ]
+test.data5 <- autot[-training.samples5, ]
+```
+
+```{r}
+train.model5 <- multinom(drive_wheels~wheel_base+engine_size,data=train.data5)
+```
+
+Next we can predict the values on the training and on the testing data:
+
+```{r}
+predtrain5<-predict(train.model5,type="class")
+predtest5<-predict(train.model5,newdata=test.data5,type="class")
+```
+
+And finally we compare confusion matrices and sums of sensitivities.
+```{r}
+T1<-table(predtrain5,train.data5$drive_wheels)
+T2<-table(predtest5,test.data5$drive_wheels)
+T1
+T2
+```
+```{r}
+sstrain<-T1[1,1]/(T1[1,1]+T1[2,1]+T1[3,1])+
+  T1[2,2]/(T1[1,2]+T1[2,2]+T1[3,2])+
+  T1[3,3]/(T1[1,3]+T1[2,3]+T1[3,3])
+sstest<-T2[1,1]/(T2[1,1]+T2[2,1]+T2[3,1])+
+  T2[2,2]/(T2[1,2]+T2[2,2]+T2[3,2])+
+  T2[3,3]/(T2[1,3]+T2[2,3]+T2[3,3])
+sstrain
+sstest
+```
+Here we see that the sum of sensitivities for the training data is again larger than for the testing data, which indicates a degree of overfitting again (though also again, not terrible).
+
+

@@ -1,0 +1,5 @@
+"0","trees2 %>% ggplot(aes(logheight,logvol))+"
+"0","  geom_point()+"
+"0","  labs(x = ""log(height)"", y = ""log(volume)"") +"
+"0","  ggtitle(""Log volume vs log height"") +"
+"0","  theme_classic()"

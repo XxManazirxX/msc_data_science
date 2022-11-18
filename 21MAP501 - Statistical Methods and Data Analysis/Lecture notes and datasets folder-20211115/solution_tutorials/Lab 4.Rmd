@@ -1,0 +1,98 @@
+---
+title: "Lab 4"
+output: html_notebook
+---
+
+
+```{r, message = FALSE,error=FALSE,comment=FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("AmesHousing")
+library("rcompanion")
+library("ggcorrplot")
+library("corrr")
+```
+
+# Recap 
+
+## Importing the data
+
+```{r}
+comic_book_characters<-read_csv(here("data/comic_characters.csv"))
+```
+
+## Changing necessary variables to factors
+
+```{r}
+comic_book_characters <- comic_book_characters %>%
+  mutate_at(vars(ID, ALIGN,EYE,HAIR,SEX,LGBTQ,ALIVE,MONTH_FA,UNIVERSE), 
+            list(factor)) 
+```
+
+## Summarise the data set
+
+Okay so it turns out i may have misinterpreted this in lab 1. Summarising the dataset means, to look at the relationships between the variables. Technically we did do this later on in the lab when we checked that the relationship between appearances (the response variable) and time_fa (predictor variable). We will also do this in 5. from the lab today.
+
+## Removing incomplete cases
+
+Removing 
+```{r}
+clean_comic_book_characters<- comic_book_characters %>%
+  drop_na()
+```
+
+
+## Filtering the dataset
+
+```{r}
+comic_book_model_data <- clean_comic_book_characters %>%
+  filter(YEAR_FA >= 1956 & YEAR_FA <= 1999 )
+max(comic_book_model_data$YEAR_FA)
+min(comic_book_model_data$YEAR_FA)
+```
+
+```{r}
+comic_book_model_data$ALIGN <- droplevels(comic_book_model_data$ALIGN)
+levels(comic_book_model_data$ALIGN)
+```
+
+
+8. Fit and evaluate a Poisson model for number of appearances of a character as predicted by YEAR_FA, ALIGN and ALIVE.
+
+Fitting the model
+
+```{r}
+comic_poissonmod<-glm(APPEARANCES~YEAR_FA+ALIGN+ALIVE,data=comic_book_model_data,family="poisson")
+summary(comic_poissonmod)
+```
+
+Evaluating the dispersion assumption 
+
+We would like to see if the assumption that variance=mean is reasonable for this dataset.  To do this we will create a plot of the absolute value of residuals versus predicted means, which should look flat, and hover around 0.8 (the green line).  Note that the ggplot version of the diagnostic plots only works for Gaussian family, so instead we use the following:
+```{r}
+plot(comic_poissonmod,which=3)
+abline(h=0.8,col=3)
+```
+The red line is not flat, and it rises above 0.8.  This suggests _overdispersion_ in the data that increases linearly as the prediction increases. If the red line were under the green one, it would be _underdispersed_.  Overdispersion is pretty common when we have not accounted for all of the important predictors in our model.  In this case, the overdispersion is not great , but we may still want to tweak our results.
+
+If our main goal for analysis is to summarise our data, eg, answer questions such as, "On average, how many more appearances do we expect a Good character to get than a bad character when they are introduced in the same year?" then we are really just interested in ensuring that our estimates of the model coefficients are good.  When a model is over or underdispersed, these can get thrown off. 
+
+Recall:Other count models
+
+Another possibility if the dispersion assumption is not satisfied is to fit a different model for counts in which the variance (dispersion) is not assumed to be the same as the mean.  So this is a model with a hidden dispersion parameter that can be used for overdispersed count data.  There are two standard models that do this.  _Quasipoisson_ models assume that the dispersion is a _linear_ function of the mean, so this would be appropriate for our model above, while _Negative Binomial_ models assume that dispersion is a _quadratic_ function of the mean, so if the red line looked more like an upward parabola.
+
+The red line looks like it could be linear  but it also looks like it could be quadratic. To implement a negative binomial model you need to use another package so I won't do this. But we can still implement a Quasipossion model.
+
+
+```{r}
+comic_quasipoissonmod<-glm(APPEARANCES~YEAR_FA+ALIGN+ALIVE,data=comic_book_model_data,family="quasipoisson")
+summary(comic_quasipoissonmod)
+```
+
+Note that the estimated dispersion parameter, 224.4277, is indeed greater than 1, confirming major overdispersion.  Note also that the model coefficients are the same as for the Poisson model--only the dispersion estimate has changed.
+
+
+

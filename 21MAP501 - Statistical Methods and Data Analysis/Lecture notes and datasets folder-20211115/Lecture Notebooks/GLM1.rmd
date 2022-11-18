@@ -1,0 +1,345 @@
+---
+title: "Generalised Linear Models, 1:  Linear regression"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+```
+
+
+## Writing mathematics in Markdown
+
+It is possible to incorporate mathematical equations in your markdown text using bits of syntax from the mathematical typesetting language LaTEX.  For example:
+
+$$
+A + B\times C = E.
+$$
+I don't expect you to learn how to do this, but you will see bits of LaTEX code in the notebook version of this file--look for the dollar sign: \$.  If you do want to learn how to create equations in markdown notebooks, you can look [here](http://www.math.mcgill.ca/yyang/regression/RMarkdown/example.html).
+
+
+
+# Section 1: Introduction to Generalised Linear Models
+
+Recall that a dataset stored as a tibble is a table in which rows represent a collection of _cases_ and columns represent _variables_ that can be recorded for all of the cases in the dataset.  
+
+Generalised linear models are a broad family of _statistical models_ that can be used to answer questions about how one of the variables, which has been designated the _response_ or _dependent_ variable, is related to other variables in the tibble, which are called _predictor_ or _independent_ variables.  We can use generalised linear models to answer three types of questions about our response variable:
+
+1. **Summary**:  How much difference is there in the response variable among groups?  How much of a change do we see in the response for each unit change in an input?  What difference/change do we see in the response when we control for _confounding variables_, ie, variables other than the input variable of interest that may affect the response?
+
+2. **Inference**:  Is the difference in response between groups we observe or the influence of an input on the response that we observe in our data likely to have arisen just through random variation, or do we have evidence that there is a meaningful connection?
+
+3. **Prediction**:  Given new values of input variables, what range of responses can we expect?
+
+A _generalised linear model_ has the form of an equation:  
+$$
+g(E(X;{\bf y})) = b_0 +b_1 y_1 + ... + b_k y_k.
+$$
+
+Here ${\bf y} = y_1, ... , y_k$ are the _predictor variables_.  They include both predictors of primary interest and any confounding variables. $X$ is the _response variable_ of interest.  The equation says that we assume it will vary randomly according to some _distribution_ whose mean value (also called the _expected value_), which we write as $E(X;{\bf y})$, depends on the predictors.  We can also write $X \sim f(E(X;{\bf y}),h)$.  The function, $f$, is a _probability distribution function_ (pdf), from a particular _family of distributions_ we will choose as part of setting up the model.
+
+Both the values of the ${\bf y} = y_1, ... y_k$ and the observed values of the responses, which we call $x$ (little $x$ for an observation, capital $X$ for the variable), will be recorded as values for each row (case) of our dataset.  The function $g$ is called the _link function_.  We will talk more about this later. The values $b_0, ..., b_k$ are called the _model parameters_ or sometimes _model coefficients_.  By fitting the model in R to our data using a process called _regression_, we will obtain estimates of these parameters.  Depending on the model, we may also obtain estimates of one or more _hidden parameters_:  these are the $h$ above, and are assumed not to depend on the values of the $y_i$'s. The values of the $b_i$'s and of any hidden parameters will help us to answer our three types of questions.  
+
+We can make the hidden parameters in a generalised linear model explicit through the following complete way to write the model:
+$$
+X \sim f(g^{-1}(b_0 +b_1 y_1 + ... + b_k y_k),h_1,\ldots,h_l).
+$$
+For the models we will consider, there will be at most one hidden parameter.
+
+
+In this tutorial, we will learn how to:
+
+1. Decide an appropriate model form to answer a given question:  this means choosing the family,  $f$, of distributions, the form of the link function, $g$, and the variables $X$ and $y_1,...,y_k$ that will appear in the model.
+
+2. Fit a linear model using the **lm** function in R to perform the required regression calculations.
+
+3. Interpret the coefficients of the **lm**  function to summarise our data.
+
+4. Predict the range of values we would expect given new inputs.
+
+5. Evaluate how appropriate the model form we chose was using various _post hoc_ tests.
+
+6. Find values of the hidden model parameters and write the full model.
+
+Throughout we will illustrate various parts of this process with plots.
+
+
+# Section 2: Model selection, fitting, and inference for a simple Gaussian distribution model, aka a "linear model".
+
+The dataset "trees" is built into R.  It contains data from 31 felled black cherry trees, including Height in feet, Girth (actually diameter) in inches measured 4.5 feet off the ground, and Volume of timber in cubic feet.  We can take a look at it, and correct the name Girth to Diameter in a new dataframe, trees2 (note it is poor practice to overwrite the original data):
+```{r}
+trees2 <- trees %>%
+  mutate(Diameter = Girth) %>%
+  select(Height,Diameter,Volume)
+```
+
+## 2.1: Choosing a model
+If we wanted to get a sense of this data, we might make a scatterplot of the Diameter and Height values:
+```{r}
+    trees2 %>%
+      ggplot(mapping = aes(x = Height, y = Diameter)) +
+      geom_point()+
+      labs(x = "Height in feet", y = "Diameter in inches") +
+      ggtitle("Height and diameter of black cherry trees") +
+      theme_classic()
+```
+
+Note that these points have a general upward drift from left to right--taller trees also tend to have a larger diameter at 4.5 feet off the ground. However, for any given height, eg 80 feet, we see a range, or _distribution_, of measured diameters. We can fit a generalised linear model to this data to understand that drift, or trend.
+
+We can sort of eyeball a line that goes through the middle of the points and gives us a representation of the general trend in values:
+
+```{r}
+    trees2 %>%
+      ggplot(mapping = aes(x = Height, y = Diameter)) +
+      geom_point()+
+      labs(x = "Height in feet", y = "Diameter in inches") +
+      ggtitle("Height and diameter of black cherry trees") +
+      geom_abline(aes(intercept=-5.5, slope=0.25),col=2) +
+      theme_classic()
+```
+
+Here the red line roughly indicates the mean value of the measurements for each height--not of course exactly for each value of height measured, but overall.  This suggests that the following equation would be a reasonable model:  
+$$
+E(X;y) = b_0 + b_1\times y,
+$$
+
+where $y$=height and $X$=diameter and $b_0$ is the intercept of the line and $b_1$ is the gradient.
+
+Aside:  It may well bother you that here we have put the $y$ variable on the horizontal axis and the $x$ variable on the vertical axis, rather than the other way around as is usual in mathematics.  I am not sure why, but this is what is standard in statistics, so it is worth getting accustomed to.
+
+Back to our equation.  For simplicity, we often supress the $y$ on the left side of the equation:  
+$$ 
+E(X) = b_0 + b_1\times y.
+$$
+
+We have done two parts of choosing a model.  We have chosen the variables that appear ($y$=height and $X$=diameter), and we have chosen the link function, $g$, which here is just the _identity_--that is, $g(E(X)) = E(X)$, i.e., $g$ doesn't change anything.  The last thing we need to do is to specify the family of distributions that $X$ should follow.  We will use the old standard, the _normal_, or _Gaussian_, distributions.  R prefers the name Gaussian, so we will use that.  Gaussian distributions are also known as Bell curves.  They look roughly like this:
+
+```{r}
+ggplot(
+  data.frame(x=seq(-10,10,0.01),density=dnorm(seq(-10,10,0.01),m=0,sd=1)),aes(x,density))+
+  geom_line()+
+  labs(x = "x", y = "Density") +
+      ggtitle("Standard Gaussian Distribution") +
+      theme_classic()
+```
+
+This family of distributions depends on two values:  the _mean_ (center) and _standard deviation_ (spread) (sometimes the _variance_, which is the square of the standard deviation, is given instead).  Instead of  $f$, we write $N$, so the Gaussian distribution with mean $m$ and standard deviation $\sigma$ will be written $N(m,\sigma)$.  The _standard Gaussian_ distribution has mean=0 and standard deviation =1, ie, $N(0,1)$.  The height of the plot gives a sense of how likely we are to draw a given value at random from this distribution.  So if we have a variable $X \sim N(0,1)$ we are much more likely to draw a random value of $X$ that is between -1 and 1 (where the graph goes up) than we are to draw a random value of $X$ that is between 8 and 10 (where the graph is quite low).  We can quantify this precisely using areas, but that isn't really critical at this point.
+
+If we change the mean, then the value along the horizontal axis where the peak sits will change, eg, if we change the mean to $m=5$ instead of $m=0$.
+
+```{r}
+ggplot(
+  data.frame(x=seq(-10,10,0.01),density=dnorm(seq(-10,10,0.01),m=5,sd=1)),aes(x,density))+
+  geom_line()+
+  labs(x = "x", y = "Density") +
+      ggtitle("Gaussian Distribution with m=5, sd=1") +
+      theme_classic()
+```
+
+Now we are most likely to choose values around 5 rather than around 0.  
+
+If we change the standard deviation from 1 to 5, the peak gets wider and flatter:
+```{r}
+ggplot(
+  data.frame(x=seq(-10,10,0.01),density=dnorm(seq(-10,10,0.01),m=0,sd=5)),aes(x,density))+
+  geom_line()+
+  labs(x = "x", y = "Density") +
+      ggtitle("Gaussian Distribution with m=0, sd=5") +
+      theme_classic()
+```
+
+So now, although it is still more likely that we will choose a value of $X$ between -1 and 1 than between 8 and 10, the difference isn't as much as it was before because it is less likely to choose a value between -1 and 1 (i.e. graph is lower there than before) and more likely to choose one between 8 and 10 (i.e. graph is higher there than before).
+
+So the two statements we can make to set up our model of tree height versus diameter are 
+
+1. $m(y) = E(X(y)) = b_0 + b_1\times y$ and
+2. $X \sim N(m(y),\sigma)$.  
+
+We could also simply write:
+
+3. $X \sim N(b_0 +b_1\times y,\sigma)$.  
+
+Note here we are assuming that $\sigma$ is a hidden parameter, i.e., $h=\sigma$ here, thus we assume that $\sigma$ doesn't depend on the value of $y$.  This assumption has a fancy name:  _homoscedasticity_.  
+
+A model in which the family of distributions,  $f$, is the Gaussian distribution is called a _Gaussian linear model_, or sometimes simply a _linear model_.  
+
+## 2.2 Fitting the model 
+Before I just eyeballed the trendline.  But we can fit it using regression.  Gaussian linear models can be fit in R using the command `lm`.  
+
+```{r}
+linmod1<-lm(Diameter~Height,data=trees2)
+linmod1
+summary(linmod1)
+```
+
+From this, we get the best estimate of the trendline possible, which we call the _regression line_.  This gives us that the intercept is $b_0=-6.1884$ and the gradient is $b_1=0.2557$.
+We can get a few more decimal places in the values by doing this:
+```{r}
+linmod1$coefficients
+```
+
+We can plot this now:
+```{r}
+trees2 %>% ggplot(aes(Height,Diameter))+
+      geom_point() +
+      geom_abline(aes(intercept=-6.1883945,slope= 0.2557471),colour="red")+
+      labs(x = "Height in feet", y = "Diameter in inches") +
+      ggtitle("Height and diameter of black cherry trees") +
+      theme_classic()
+```
+
+Actually, using ggplot, it is even easier to add a linear regression line to a plot:
+```{r}
+trees2 %>% ggplot(aes(Height,Diameter))+
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE,colour="red") +
+      labs(x = "Height in feet", y = "Diameter in inches") +
+      ggtitle("Height and diameter of black cherry trees") +
+      theme_classic()
+```
+
+
+## 2.3 Summary and prediction with the model
+
+We can already use this output to _summarise_ our data.  We can say that for each additional foot of height, the diameter increases on average by 0.2557471 feet.
+
+We also have a _prediction_ of the mean diameter of a tree given a height.  So, for example, the mean diameter of an 80 foot tall tree should be 
+$$
+E(X) =-6.1883945 + 0.2557471\times  80 = 14.2713735 \,\, {\rm   inches.}
+$$  
+We can also use R to do this calculation as follows (differences are due to rounding differences in the calculation).
+```{r}
+predict(linmod1,data.frame(Height=80))
+```
+
+Notice that there were five 80 foot trees in the dataset, with diameters of
+```{r}
+trees2[trees2$Height == 80,]$Diameter
+```
+
+The mean of these values is
+```{r}
+trees2[trees2$Height == 80,]$Diameter %>% mean()
+```
+
+which isn't what the model predicted.  The reason is that this is not the prediction of the mean diameter of trees of a given height for the particular dataset we have, but rather a prediction of the overall mean diameter we would expect to find for 80 foot tall black cherry trees if we measured more and more and more of them.  This is what is called _inference_:  making a prediction about a _population_ (all black cherry trees) from a _sample_ (the 31 felled cherry trees in this dataset).
+
+## 2.4 Residuals in a linear model
+
+The difference between the measured diameter of a particular tree of a given height and the predicted mean diameter of trees of that height is called the _residual_ for that case (tree).  So for the tree of height 80 feet and diameter 11.1, the residual is $11.1 - 14.27138 = -3.17138$.  So that particular tree was a bit more than 3 inches skinnier than we would have expected from our model.  For the tree that was 80 feet tall with diameter 17.9, the residual was $17.9 - 11.1 = 6.8$.  So that tree was almost 7 inches fatter than our model predicted.
+
+We can examine all of the residuals for all of the cases in our set with the following command:
+```{r}
+linmod1$residuals
+```
+
+If we take the mean of these values, we will get 0 (up to rounding error).  
+```{r}
+mean(linmod1$residuals)
+```
+```{r}
+round(mean(linmod1$residuals),7)
+```
+
+
+## 2.5 Hidden model parameter
+
+Recall that Gaussian distributions depend on two parameters, the mean and the standard deviation.  We have created a model in which the mean diameter is a linear function of the height.  The standard deviation in our model will not depend on height.  It is given (up to rounding error!) by the standard deviation of the residuals:
+
+```{r}
+sd(linmod1$residuals)
+```
+
+Note that if we create a histogram of the residuals, it looks vaguely like a Gaussian curve, in that it goes up in the middle and down at the sides:
+```{r}
+hist(linmod1$residuals)
+```
+
+This is important, because it says that the residuals have a roughly normal or Gaussian distribution, which is also one of the assumptions implicit in the form of the model.This tells us that the choice of the "gaussian" family of distributions is pretty good here.  We can also look at something called a _QQ plot_, which will look roughly like a straight line if our choice of distribution is good:
+
+```{r}
+qqnorm(linmod1$residual)
+```
+
+
+Note that if we plot a line on the QQ plot with intercept = 0 and gradient = 2.681866, it is a pretty good fit:
+
+```{r}
+qqnorm(linmod1$residual)
+abline(0,2.681866,col=2)
+```
+
+For a Gaussian family, the approximate gradient of the QQ plot of residuals is given by the standard deviation of the residuals.
+
+We can also extract the exact estimate of the standard deviation from the model (without rounding errors) as follows:
+```{r}
+summary(linmod1)$sigma
+```
+
+When we look at a scatterplot of residuals versus height, we see a pretty random scatter that is roughly the same width everywhere:  
+```{r}
+plot(trees$Height,linmod1$residuals, main="residuals versus height")
+abline(h=0,col=2)
+```
+
+This is important.  Examining this plot ensures that the spread of diameters around the regression line does not depend on the variable, Height.  This says that the assumption of _homoscedasticity_ is satisfied, that is, the hidden variable, $\sigma$ is indeed independent of the predictor variables in the model.
+
+## 2.6 The full and final model and summary of investigation
+
+So the model we have built is:
+
+$$
+{\rm diameter} \sim N(-6.1884 + 0.2557 \times  {\rm height}, 2.727713).
+$$
+
+We have also checked that the model is reasonable by checking the assumptions _Linearity_, _Homoscedasticity_ and _Normality_ of the model:
+
+1. Linearity:  looking at the scatterplot of diameter versus height, which was roughly linear, and 
+
+2. looking three plots of residuals:  
+
+    a. Homoscedasticity:  the scatter of residuals versus height, which is roughly the same width across the plot and which doesn't show any indication of trend
+    
+    b. Normality:  the histogram of residuals, which looks roughly Gaussian
+    
+    c. Normality:  the qq plot of residuals, which looks roughly like a straight line.
+    
+The plots we investigate to evaluate if the model assumptions are reasonable are called _diagnostic plots_.  There is a single command that will give all of the diagnostic plots at once:
+
+```{r}
+linmod1 %>%
+  gg_diagnose(max.per.page = 1)
+```
+
+The first four plots are the ones we will look at for now.  The fourth plot of residuals versus fitted can replace the plot of outcome versus predictor. There is actually also a fourth assumption also called _independence_, which says that the residuals do not depend on order in which data was collected.  However, in this setting, we don't have the order of the data, so we can't check it.  We will talk more about it in a later lecture about model evaluation.
+    
+## 2.7 Exercise 2
+
+Now consider the relationship between tree height and tree volume for the same dataset in a new notebook, going through all of the same steps as above.
+

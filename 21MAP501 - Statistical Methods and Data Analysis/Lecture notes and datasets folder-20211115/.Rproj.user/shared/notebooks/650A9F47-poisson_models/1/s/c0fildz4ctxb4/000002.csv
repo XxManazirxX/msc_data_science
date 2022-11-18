@@ -1,0 +1,3 @@
+"0","AwayT <- AwayT %>%"
+"0","  rename(Team = AwayTeam, Opponent = HomeTeam, TeamGoals = FTAG, OpponentGoals = FTHG)"
+"0",""

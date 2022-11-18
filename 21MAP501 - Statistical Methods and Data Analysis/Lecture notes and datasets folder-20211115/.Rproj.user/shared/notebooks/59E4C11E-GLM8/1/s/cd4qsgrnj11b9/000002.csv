@@ -1,0 +1,2 @@
+"0","saleprices<-as.vector(Ames$Sale_Price)"
+"0","Amespredict<-model.matrix(~.-1,Ames[,-c(79:81)])"

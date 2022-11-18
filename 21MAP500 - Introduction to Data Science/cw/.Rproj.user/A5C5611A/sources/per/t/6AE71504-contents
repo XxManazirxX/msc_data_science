@@ -1,0 +1,260 @@
+group---
+title: "Practical 4"
+author: "Axel Finke"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+
+```{r setup, echo = FALSE, message = FALSE}
+# This is a setup chunk. It reads some global options from the external R
+# script rmarkdown_setup.R which is in the "scripts" folder.
+source(here::here("scripts", "rmarkdown_setup.R"))
+```
+
+  
+### 4.0 Exercise
+
+Start a new R notebook named `practical_04.Rmd` and save it to the `rmd` folder of your RStudio project `practicals`. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook. All data files for this practical should be saved to the subfolder `data` of your project folder.
+
+
+### 4.1 Exercise
+
+Consider the `starwars` data set from the **dplyr** package.
+
+a. Use the function `glimpse()` to get an overview of which variables this data set contains and what data types the variables have.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% glimpse()
+    ```
+
+b. Find as many different ways as you can to output Yoda's height (you may use that Yoda entry is the 19th row in `starwars`). The output should always be an atomic vector (i.e. not a list or a data frame). Achieve this
+
+    i. by interpreting the data frame as a matrix,
+            
+        ```{r, eval = FALSE, echo = FALSE}
+        # Possible solutions: 
+        starwars[19, 2] %>% unlist()
+        starwars[19, "height"] %>% unlist()
+        starwars[[19, 2]]
+        starwars[[19, "height"]]
+        ```
+        
+    ii. by interpreting the data frame as a list,
+        
+        ```{r, eval = FALSE, echo = FALSE}
+        # Possible solutions:
+        starwars$height[19]
+        starwars[[2]][19]
+        starwars[["height"]][19]
+        ```
+
+    iii. by using **dplyr** verbs.
+    
+        ```{r, eval = FALSE, echo = FALSE}
+        # Possible solutions:
+        starwars %>% 
+          filter(name == "Yoda") %>% 
+          pull(height)
+        
+        starwars %>% 
+          filter(name == "Yoda") %>% 
+          select(height) %>%
+          unlist()
+        ```
+
+
+
+### 4.2 Exercise
+
+Consider again the `starwars` data set. Write R code that achieves the following tasks. For each task, the code should use a single pipe,  (multiple `%>%` operators are allowed) starting with the original `starwars` data set, i.e. the beginning should always read `starwars %>%` (except in (j) where you might need to define some other variables first).
+
+a. Order the cases (rows) set alphabetically according to the character name.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% arrange(name)
+    
+    # Note: the questions were previously mislabeled as b., c., d., ...
+    # This has been corrected now.
+    ```
+
+b. Order the cases first by species and by character name (alphabetically) within each species.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% arrange(species, name)
+    ```
+    
+
+c. Count the number of characters whose homeworld is Tatooine or not recorded in the data set. The code should produce a single number (not a data frame!).
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% 
+      filter(homeworld == "Tatooine" | is.na(homeworld)) %>%
+      nrow()
+    
+    # Alternative solution (there are many others)
+    starwars %>%
+      filter(homeworld == "Tatooine" | is.na(homeworld)) %>%
+      count() %>% 
+      pull(n)
+    ```
+
+d. Create a table which only includes the variable `name` and variables whose names include the string "color" without using the full column names or column positions.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% select(name | contains("color"))
+    ```
+
+
+e. Create a table which gives the average height [in cm] of female characters for each species. Don't forget to ensure that all variables have appropriate names.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>%
+      filter(sex == "female") %>%
+      group_by(species) %>%
+      summarise(avg_female_height = mean(height, na.rm = TRUE))
+    ```
+    
+
+f. Create a table which counts the proportions of different eye colours within each species. Don't forget to ensure that all variables have appropriate names.
+
+    ```{r, echo = FALSE, eval = FALSE}
+    starwars %>%
+      group_by(species, eye_color) %>%
+      summarise(n = n()) %>% # after this, the tibble is only grouped by species
+      mutate(frequency = n / sum(n)) %>% 
+      select(-n) %>%
+      arrange(species)
+    ```
+
+g. Display the range (difference between maximum and minimum) of the height of the characters within each species.
+    
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>% 
+      group_by(species) %>%
+      summarise(min_height = min(height, na.rm = FALSE), max_height = max(height, na.rm = FALSE)) %>%
+      mutate(range_height = max_height - min_height,) %>%
+      select(-c(min_height, max_height))
+    ```   
+
+
+h. Add a variable `rel_height` to the data frame which is such that `rel_height` represents the height of a character relative to
+
+    i. the mean of the heights of all characters in the data set,
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>%
+      select(name, height, species) %>%
+      mutate(rel_height = height / mean(height, na.rm = TRUE))
+    ```
+    ii. the mean of heights of all characters of the same species in the data set.
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>%
+      select(name, mass, species) %>%
+      group_by(species) %>%
+      mutate(rel_height = mass / mean(mass, na.rm = TRUE))
+    ```
+
+
+i. Without typing in any column names, 
+
+    i. create a new data frame which only contains the columns which are type `character` or type `list`.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>%
+      select(where(is.character) | where(is.list))
+    
+    starwars %>%
+      select(!where(is.double)) # alternative solution 
+    ```
+
+    ii. change all the columns which are `character` (except the column `name`) to `factor`.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    starwars %>%
+      mutate(across(where(is.character) & !name, as.factor))
+    ```
+
+
+
+j. Create a data frame which gives the number of characters whose height is "very short" ($\mathrm{height} \leq 100$), "short" ($100 < \mathrm{height} \leq 170$), "average" ($170 < \mathrm{height} \leq 200$) or "tall" ($\mathrm{height} > 200$),
+
+    i. using the `case_when()` function,
+    
+    ii. using the base R function `cut()` (which you may need to look up).
+    
+    ```{r, eval = FALSE, echo = FALSE}
+    breaks <- c(0, 100, 170, 200, Inf)
+    labels <- c("very short", "short", "average", "tall")
+    
+    # solution using case_when()
+    starwars %>% 
+      mutate(height_category = case_when(
+          is.na(height) ~ NA_character_, # each data type has its own version of NA and here we need to use the right one otherwise we'll get an error
+          height <= breaks[2] ~ labels[1],
+          height <= breaks[3] ~ labels[2],
+          height <= breaks[4] ~ labels[3],
+          TRUE ~ labels[4]
+        )
+      ) %>%
+      group_by(height_category) %>%
+      summarise(no_of_characters = n())
+    
+    # solution using cut()
+    starwars %>% 
+      group_by(height_group = cut(height, breaks = breaks, labels = labels)) %>%
+      summarise(no_of_characters = n()) 
+    ``` 
+
+
+### 4.3 Exercise
+
+Download the files `cabi_stations.csv` as well as `cabi_rides_201901.csv` and `cabi_rides_201902.csv`. These files contain collected by Capital Bikeshare (CaBi) -- a publicly-owned bicycle sharing system that serves areas in and around Washington DC in the United States. Specifically, the file `cabi_stations.csv` contains information about the pick-up and return stations^[Available from <https://opendata.dc.gov/datasets/capital-bike-share-locations>]; the files `cabi_rides_201901.csv` and `cabi_rides_201902.csv` contain information about rides undertaken by CaBi users in January and February 2019^[Available from <https://www.capitalbikeshare.com/system-data>]. 
+
+Include the following code chunk in your notebook. We will learn more about the function `read_csv()` in Chapter 6. For the moment, all you need to know is that it reads the content of (CSV) data file into a variable in R (ignore the output under `Column specification ...` shown in the console when executing these lines).
+
+```{r, eval = FALSE}
+stations <- read_csv(here("data", "cabi_stations.csv"))
+trips_01 <- read_csv(here("data", "cabi_trips_201901.csv"))
+trips_02 <- read_csv(here("data", "cabi_trips_201902.csv"))
+```
+
+a. Use the function `glimpse()` to get an overview of which variables these data sets contain and what data types the variables have.
+
+b. Combine `trips_01` and `trips_02` into a single tibble called `trips`.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    trips <- trips_01 %>% bind_rows(trips_02)
+    ```
+
+
+c. Add columns `start_longitude`, `start_latitude`, `end_longitude` and `end_latitude` `station` to `trips`. These should contain information about coordinates of the start and end of each ride. No other columns should be added.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    trips <- trips %>% 
+      left_join(stations, by = c("start_station" = "address")) %>%
+      rename(start_longitude = longitude, start_latitude = latitude) %>%
+      left_join(stations, by = c("end_station" = "address")) %>%
+      rename(end_longitude = longitude, end_latitude = latitude) %>%
+      select(colnames(trips) | contains("longitude") | contains("latitude")) 
+    ```
+
+
+
+
+<!-- ```{r, eval = FALSE} -->
+<!-- folder <- "data/practicals/03" -->
+
+<!-- read_csv(here(folder, "cabi_stations.csv")) %>%  -->
+<!--   clean_names() %>%  -->
+<!--   write_csv(file =  here(folder, "cabi_stations.csv")) -->
+<!-- read_csv(here(folder, "cabi_trips_201901.csv")) %>% -->
+<!--   clean_names() %>%  -->
+<!--   select(!c(start_date, end_date)) %>% -->
+<!--   write_csv(file =  here(folder, "cabi_trips_201901.csv")) -->
+<!-- read_csv(here(folder, "cabi_trips_201902.csv")) %>% -->
+<!--   clean_names() %>%  -->
+<!--   select(!c(start_date, end_date)) %>% -->
+<!--   write_csv(file =  here(folder, "cabi_trips_201902.csv")) -->
+<!-- ``` -->
+
+
+

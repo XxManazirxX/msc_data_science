@@ -1,0 +1,231 @@
+---
+title: 'RESIT EXAM:  Statistics for Data Science'
+output:
+  html_document:
+    df_print: paged
+---
+
+You will submit your exam in the form of a single R notebook (i.e.`.Rmd` file) which can be rendered ("knitted") to an `.html` document. Specifically, submit on the link on Learn the rendered `.html` version of your notebook.
+
+The exam will be marked on the basis of correctness of code, interpretation of outputs and commentary as indicated, so ensure that all code is printed in the knit document.
+
+Please ensure that neither your code nor your filename contains your name.
+
+## Preamble 
+
+In this section, you will prepare your workspace for undertaking the analyses in this exam.  Create a folder on your computer containing the exam notebook and the two exam datasets.  Execute the following code chunks before starting the remainder of the exam.
+
+```{r, message = FALSE}
+library(rio)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(magrittr)
+library(ggplot2)
+library(pROC)
+library(car)
+library(nnet)
+library(caret)
+library(lme4)
+library(glmnet)
+library(devtools)
+install_github("vqv/ggbiplot")
+library(ggbiplot)
+library(cluster)
+library(sandwich)
+library(vegan)
+```
+
+```{r}
+kidnappings <- import("Hostage_and_kidnapping.csv")
+```
+```{r}
+summer_clothes <- import("summer_clothes.csv")
+summer_clothes <-summer_clothes[summer_clothes$units_sold==100, ]
+summer_clothes$units_sold<-NULL
+```
+
+
+
+## 1. Linear Regression
+
+The dataset summer_clothes contains data scraped from the E-commerce website Wish.  It contains listings for women's summer clothing, including:
+title_orig: the original text from the listing, 
+price:the discounted sale price, 
+retail_price: the original retail price   
+rating: average product rating
+and so on.  You can see more information about this dataset at <https://www.kaggle.com/jmmvutu/summer-products-and-sales-in-ecommerce-wish/>
+
+a. For the summer_clothes dataset, create plots of predictors price and of rating against the outcome retail_price.  Do these suggest a linear model would be appropriate?  Are there any points we should remove?  Why?  If necessary, do this. [6 points]
+```{r}
+plot(summer_clothes$price,summer_clothes$retail_price)
+```
+```{r}
+plot(summer_clothes$rating,summer_clothes$retail_price)
+```
+
+As the trend is generally upward in a linear drift, a linear model is a reasonable start.  However, we should note the influential point on the far right in the first plot and the far left in the second.  As these are far outside the main predictor variable ranges, it would be better to remove them from the dataset.
+
+```{r}
+summer_clothes<-summer_clothes[summer_clothes$rating>1.5 & summer_clothes$price<40,]
+```
+
+
+b. Calculate the correlation between price and rating.  Why should we do this?  What do we observe? [2 points]
+
+```{r}
+cor(summer_clothes$price,summer_clothes$rating)
+```
+We need to check that the predictors are not strongly correlated or we have problems with multicollinearity and model fitting.  These are almost uncorrelated, so it is reasonable to build a model using both variables.  
+
+c. Construct a linear regression model mod1 for retail_price as a function of price and rating. using the function lm.  What does the value Multiple R-squared say about this model?  Write the model equation. [4 points]
+
+Answer:
+```{r}
+mod1<- lm(retail_price~price+rating,data=summer_clothes)
+summary(mod1)
+```
+The multiple R-squared value tells us that only about 16% of the variance in retail price is accounted for by this model.
+
+$$
+retail\_price \sim N(2.8652 + 2.8137*price - 0.7162*rating,25.99)
+$$
+
+d. State the four assumptions of linear models and explain how we check these. Check them for mod1. [8 points]
+
+Assumption 1: The relationship is linear. We check this by looking at the residuals vs fitted plot.  We want to see a horizontal line with no distinct patterns.  Here, we see a downward trend in the residuals, which suggests that linearity is not quite appropriate.
+Assumption 2:  Normality of residuals.  We use the QQplot of residuals for this, and are looking for a straignt line.  Again, we see a distinct curve, so this suggests that the residuals are not very normal.
+Assumption 3:  Homoscedasticity of residuals.  We use the scale-location plot for this, and are looking for a horizontal line with an even spread around it.  Here the line has a distinct upward trend.
+
+```{r}
+plot(mod1)
+```
+Assumption 4:  Independence of residuals.  For this, we investigate the plot of residuals against predictors:
+```{r}
+plot(summer_clothes$price,mod1$residuals)
+plot(summer_clothes$rating,mod1$residuals)
+```
+Here the plot against rating is okay, but the plot against price has a definite trend.
+
+
+e. Given your answer to part d, construct confidence intervals for the model coefficients. [2 points]
+ 
+As the assumptions are not met very well, we need to use robust confidence intervals.  
+```{r}
+std.err<-sqrt(diag(vcovHC(mod1,type="HC0")))
+r.est <- cbind(Estimate = coef(mod1),"Robust SE"=std.err,
+               "Pr(>|z|)" = 2*pnorm(abs(coef(mod1)/std.err),lower.tail=FALSE),
+               LL=coef(mod1)- 1.96*std.err,
+               UL=coef(mod1)+ 1.96*std.err)
+r.est
+```
+
+
+
+
+## 2. Logistic Regression
+
+The dataset kidnappings contains information on terrorist events around the world between 2000 and 2017 that involve kidnappings or the taking of hostages.  The data is derived from the Global Terrorism Database.  
+
+a. Create a model, logmod1, to predict if a given kidnapping was done undertaken by domestic terrorists (domestic) given information on the number of days the hostages were held (ndays). (2 points)
+```{r}
+logmod1<-glm(domestic~ndays, data=kidnappings,family="binomial")
+summary(logmod1)
+```
+
+b. Split the data in a 70% (training) 30% (testing) split using set.seed(123). Build a mixed model on the training data for domestic with predictors:
+* ndays (fixed)
+* nperps (number of perpetrators) (fixed)
+* nhostkid (number of hostages) (fixed)
+* claimed (was the attack claimed by an organisation?) (fixed)
+* ransom (did the kidnappers demand a ransom?) (fixed)
+* Armed (were the kidnappers armed?) (fixed)
+* region_txt (what region of the world did the kidnapping occur in?) (random)
+Note that when building the model, you will need to use Gaussian quadrature instead of Laplace approximation.  This means adding the option "nAGQ = 0" to your model building code.
+
+Cross validate on the remaining 30%.  Plot the ROCs for both data and comment on your findings.  (6 points)
+
+Answer: 
+```{r}
+set.seed(123)
+training.samples <- c(kidnappings$domestic) %>%
+  createDataPartition(p = 0.7, list = FALSE)
+train.data  <- kidnappings[training.samples, ]
+test.data <- kidnappings[-training.samples, ]
+```
+Now we create the model on the training data. 
+```{r}
+train.model <- glmer(domestic~ndays+nperps+nhostkid+
+                    claimed+ransom+Armed+(1|region_txt), data = train.data,family="binomial",nAGQ = 0)
+```
+Next we can predict the values on the training and on the testing data:
+
+```{r}
+predtrain<-predict(train.model,type="response")
+predtest<-predict(train.model,newdata=test.data,type="response")
+```
+
+```{r}
+roctrain<-roc(response=train.data$domestic,predictor=predtrain,plot=TRUE,main="ROC Curve for prediction if a kidnapping was domestic terrorism",auc=TRUE)
+roc(response=test.data$domestic,predictor=predtest,plot=TRUE,auc=TRUE,add=TRUE,col=2)
+legend(0,0.4,legend=c("training","testing"),fill=1:2)
+```
+This model performs similarly for the testing and training data, so it suggests the model was not overfit.  
+
+c. Write the model equation for train.model.  Which of the predictors appear to have the largest effect on the outcome?  Explain your answer. (5 points)
+
+```{r}
+summary(train.model)
+```
+ 
+
+
+## 3. Lasso Regression
+a. For the summer_clothes dataset, use the steps of Lasso prediction to choose variables to include in a Gaussian model for the outcome variable "rating" (do not include "title_orig" or "merchant_name"). Choose fixed effects using the lambda.1se cutoff and add any suitable random effects by comparing with lambda.min cutoff.
+
+```{r}
+clothesrate<-as.vector(summer_clothes$rating)
+clothespredict<-model.matrix(~.-1,summer_clothes[,-c(1,5,17)])
+```
+
+```{r}
+clothesfit<-glmnet(clothespredict,clothesrate,family="gaussian")
+```
+
+```{r}
+plot(clothesfit,xvar = "lambda",label=TRUE)
+```
+```{r}
+plot(clothesfit)
+```
+```{r}
+plot(clothesfit,xvar = "dev")
+```
+Only a bit more than 25% of deviance can be explained by all of the variables included, and almost 20% can be explained with half that many.
+
+```{r}
+clothescv<-cv.glmnet(clothespredict,clothesrate,family="gaussian")
+plot(clothescv)
+```
+First consider variables that come from the lambda.1se:
+```{r}
+clothescoeff<-coef(clothesfit,s=clothescv$lambda.1se)
+clothescoeff@Dimnames[[1]][1+clothescoeff@i]
+```
+And the ones that come from lambda.min
+```{r}
+clothescoeff<-coef(clothesfit,s=clothescv$lambda.min)
+clothescoeff@Dimnames[[1]][1+clothescoeff@i]
+```
+A lot of these are for colour, so we can add this as a random effect.
+
+b. Build the model using lmer and interpret the coefficients. [5 points]
+
+```{r}
+clothesmod<-lmer(rating~badge_product_quality+merchant_rating+(1|colour),data=summer_clothes)
+```
+```{r}
+summary(clothesmod)
+```
+Having a badge for product quality increases the rating of an item on average by half a point.  For each additional point of merchant rating, product rating increases on average by 0.63.  Different colours of items are responsible for a variations in product rating with standard deviation about 0.01.
+

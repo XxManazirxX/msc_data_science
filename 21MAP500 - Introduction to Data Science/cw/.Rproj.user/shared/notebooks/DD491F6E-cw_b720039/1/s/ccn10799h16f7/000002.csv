@@ -1,0 +1,29 @@
+"0","nasa_co2 <- read_table(here(""data"", ""nasa_carbon_dioxide.txt""),"
+"0","                     skip = 53,"
+"0","                     col_names = F,"
+"0","                                          )"
+"1","
+[36m--[39m [1m[1mColumn specification[1m[22m [36m------------------------[39m
+cols(
+  X1 = [32mcol_double()[39m,
+  X2 = [32mcol_double()[39m,
+  X3 = [32mcol_double()[39m,
+  X4 = [32mcol_double()[39m,
+  X5 = [32mcol_double()[39m,
+  X6 = [32mcol_double()[39m,
+  X7 = [32mcol_double()[39m,
+  X8 = [32mcol_double()[39m
+)
+
+"
+"0","colnames(nasa_co2)[3] <-""date"""
+"0","colnames(nasa_co2)[4] <- ""co2"""
+"0",""
+"0","nasa_co2 <- nasa_co2 %>%"
+"0","  filter(co2 > 0)%>%"
+"0","  clean_names() %>%"
+"0","  distinct()%>%"
+"0","  select(date, co2)%>%"
+"0","    mutate(date = format(date_decimal(date),""%Y-%m-01"")) %>%"
+"0","    mutate(date = as.Date.character(date, format = ""%Y-%m-%d""))"
+"0","                    "

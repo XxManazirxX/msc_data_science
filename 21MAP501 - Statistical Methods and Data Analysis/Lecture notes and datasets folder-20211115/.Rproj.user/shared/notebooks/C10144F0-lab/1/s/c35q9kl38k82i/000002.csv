@@ -1,0 +1,7 @@
+"0","predict(comic_linmod3, newdata = data.frame(YEAR_FA = 1990, ALIGN = ""Good Characters"", ID = ""Secret Identity""), type = ""response"")"
+"1","        1 "
+"1","
+"
+"1","0.6033236 "
+"1","
+"

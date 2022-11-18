@@ -1,0 +1,4 @@
+"0","trees2<- trees2 %>%"
+"0","  mutate(logheight = log(Height)) %>%"
+"0","  mutate(logvol = log(Volume)) %>%"
+"0","  mutate(logdiam = log(Diameter))"

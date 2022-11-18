@@ -1,0 +1,17 @@
+"0","library(""MASS"")"
+"2","
+Attaching package: ‘MASS’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    select
+
+"
+"0","library(""sandwich"")"
+"2","Warning:"
+"2"," package ‘sandwich’ was built under R version 4.1.2
+"
+"0","library(""investr"")"
+"2","Error in library(""investr"") : there is no package called ‘investr’
+"

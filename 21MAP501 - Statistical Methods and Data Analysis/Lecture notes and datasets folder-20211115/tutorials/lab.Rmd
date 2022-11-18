@@ -1,0 +1,233 @@
+---
+title: "Lab"
+author: "Manazir"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+# Preamble
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  comment = "",
+  results = "hold",
+  echo = TRUE,
+  message = FALSE,
+  warning = FALSE,
+  fig.width = 4,
+  fig.height = 2.6,
+  fig.align = "center"
+)
+```
+## Read in packages
+```{r, message = FALSE,comments=FALSE, warning = FALSE}
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("lindia")
+```
+
+## Read data
+
+```{r}
+comic_characters <- read_csv(here("data", "comic_characters.csv"))
+```
+
+## Factorising Data
+```{r}
+comic_characters <- comic_characters %>%
+  mutate_at(vars(ID, ALIGN, EYE, HAIR, SEX, LGBTQ, ALIVE, MONTH_FA, UNIVERSE),
+             list(factor))
+
+
+```
+
+##Cleaning Data (remove NA)
+
+```{r}
+clean_comic_characters <- comic_characters %>%
+  drop_na()
+```
+
+```{r}
+comic_model_data <- clean_comic_characters %>%
+  filter(YEAR_FA >= 1956 & YEAR_FA <= 1999)
+max(comic_model_data$YEAR_FA)
+min(comic_model_data$YEAR_FA)
+```
+
+```{r}
+comic_linmod <- lm(APPEARANCES ~ YEAR_FA, data = comic_model_data)
+summary(comic_linmod)
+```
+
+## Adding variables ALIGN and ALIVE
+
+```{r}
+levels(comic_model_data$ALIGN)
+summary(comic_model_data$ALIGN)
+comic_model_data$ALIGN <- droplevels(comic_model_data$ALIGN)
+levels(comic_model_data$ALIGN)
+```
+```{r}
+levels(comic_model_data$ALIVE)
+summary(comic_model_data$ALIVE)
+
+```
+##Build Model
+
+```{r}
+comic_linmod2 <- lm(APPEARANCES ~ YEAR_FA + ALIGN + ALIVE, data = comic_model_data)
+summary(comic_linmod2)
+```
+## Diagnose
+
+```{r}
+comic_linmod2 %>%
+  gg_diagnose(max.per.page = 1)
+```
+
+```{r}
+summary(comic_model_data$UNIVERSE)
+```
+```{r}
+DC_data <- comic_model_data %>%
+  filter(UNIVERSE == "DC")
+summary(DC_data$ID)
+Marvel_data <- comic_model_data %>%
+  filter(UNIVERSE == "Marvel")
+summary(Marvel_data$ID)
+```
+
+
+## Binomial Model
+
+```{r}
+comic_linmod3 <- glm(UNIVERSE ~ YEAR_FA + ALIGN + ID, family = "binomial", data = comic_model_data)
+comic_linmod3
+```
+
+## predict probabilty a character is Marvel, good and with a secret identity in 1990
+
+```{r}
+predict(comic_linmod3, newdata = data.frame(YEAR_FA = 1990, ALIGN = "Good Characters", ID = "Secret Identity"), type = "response")
+```
+
+
+```{r}
+levels(comic_model_data$ALIGN)
+```
+
+
+
+##Lab 4
+
+```{r}
+
+comic_poissonmod <- glm(APPEARANCES ~ YEAR_FA + ALIGN + ALIVE, data = comic_model_data, family = "poisson")
+summary(comic_poissonmod)
+```
+
+
+
+
+```{r}
+plot(comic_poissonmod,which=3)
+abline(h=0.8,col=3)
+```
+
+```{r}
+comic_qpoissonmod <- glm(APPEARANCES ~ YEAR_FA + ALIGN + ALIVE, data = comic_model_data, family = "quasipoisson")
+summary(comic_qpoissonmod)
+
+plot(comic_qpoissonmod,which=3)
+abline(h=0.8,col=3)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## 6 FOOTBALL
+
+```{r}
+Pl_players <- clean_names(read_csv(here( "data", "england-premier-league-players-2018-to-2019-stats.csv"),
+                                   na = c("?", "", "NA", "N/A", "Na"),))
+```
+## Check for NA
+```{r}
+Pl_players %>%
+  sapply(function(x) sum(is.na(x)))
+```
+
+```{r}
+Pl_players <- Pl_players %>%
+  mutate_at(vars(position),
+            list(factor))
+```
+
+## Check levels and numbers in "Position"
+```{r}
+summary(Pl_players$position)
+```
+
+
+```{r}
+Pl_players %>%
+  ggplot(aes(minutes_played_overall, goals_overall, colour = position)) +
+  geom_point()+
+  labs(x = "Minutes Played", y = "Goals Scored") +
+  ggtitle("Minutes played versus Goals Scored") +
+  theme_classic()
+```
+
+## Filter out Goalkeeper
+
+```{r}
+Pl_outfield_players <- Pl_players %>%
+  filter(position != "Goalkeeper")
+# Drop Leveles
+Pl_outfield_players$position <- droplevels(Pl_outfield_players$position)
+# Plot Graph again
+Pl_outfield_players %>%
+  ggplot(aes(minutes_played_overall, goals_overall, colour = position)) +
+  geom_point()+
+  labs(x = "Minutes Played", y = "Goals Scored") +
+  ggtitle("Minutes played versus Goals Scored") +
+  theme_classic()
+```
+
+
+## Making the model
+```{r}
+football_lm1 <- lm(goals_overall ~ position +minutes_played_overall, data = Pl_outfield_players)
+summary(football_lm1)
+
+# diagnose
+
+football_lm1 %>%
+  gg_diagnose(max.per.page = 1)
+```
+
+## Dependant
+
+```{r}
+football_lm2 <- lm(goals_overall ~ position *minutes_played_overall, data = Pl_outfield_players)
+summary(football_lm1)
+```
+

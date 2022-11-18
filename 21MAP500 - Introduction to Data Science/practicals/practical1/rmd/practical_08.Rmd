@@ -1,0 +1,114 @@
+---
+title: "Practical *"
+author: "Manazir"
+
+---
+```{r, echo=F}
+library("tidyverse")
+library("gapminder")
+library("here")
+library("lintr")
+library("RColorBrewer")
+```
+
+    ```{r, eval = FALSE, message = FALSE, echo = FALSE, fig.height = 4, fig.width = 6}
+df <- gapminder %>%
+  filter(year == 2007 & continent != "Oceania")
+
+df %>%
+  ggplot(mapping = aes(x = log10(gdpPercap), y = lifeExp, size = pop)) +
+  geom_point(alpha = 0.3) +
+  geom_point(data = select(df, !continent), color = "grey85")
+facet_wrap(~continent)
+```
+
+
+```{r, eval= F, message== F, fig.height= 4, fig.width= 9}
+
+df <- gapminder %>%
+  filter(continent != "Oceania")
+
+df %>%
+  ggplot(mapping = aes(x = year, y = lifeExp, group = country)) +
+  geom_line(data = select(df, !continent), color = "grey85") +
+  geom_line(alpha = 0.2) +
+  facet_wrap(~continent)
+```
+
+###Ex 8.2#
+    ```{r, eval = FALSE, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 3, fig.height = 2}
+
+gapminder %>%
+  filter(year == 2007) %>%
+  filter(pop <= 10^7) %>%
+  ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) +
+  geom_point(alpha = 0.2)
+
+gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(mapping = aes(x = gdpPercap, y = lifeExp, size = pop)) +
+  geom_point(alpha = 0.2) +
+  scale_size_continuous(limits = c(0, 10^7))
+```
+
+```{r, eval = FALSE, echo = FALSE, message = FALSE, warning = FALSE, fig.width = 3, fig.height = 2}
+
+
+gapminder %>%
+  filter(year == 2007) %>%
+  mutate(log_gdp_percap = log(gdpPercap)) %>%
+  ggplot(mapping = aes(x = log_gdp_percap, y = lifeExp)) +
+  geom_point(alpha = 0.2)
+
+gapminder %>%
+  filter(year == 2007) %>%
+  ggplot(mapping = aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(alpha = 0.2) +
+  scale_x_continuous(trans = "log", breaks = pretty(0:60000))
+```
+
+
+```{r, fig.width = 4, fig.height = 3, echo = FALSE}
+diamonds %>%
+  ggplot(mapping = aes(x = carat, y = price)) +
+  geom_bin2d() +
+  scale_x_continuous(trans = "log10") +
+  scale_y_continuous(trans = "log10") +
+  scale_fill_distiller(palette = "RdPu")
+```
+
+
+```{r, fig.width = 4.5, fig.height = 5, echo = FALSE}
+ 
+gapminder %>%
+  filter(year == 2007) %>%
+  select(country, lifeExp) %>%
+  rename(life_exp_2007 = lifeExp) -> df
+
+gapminder %>%
+  filter(continent == "Asia") %>%
+  left_join(df, by = "country") %>%
+  ggplot(mapping = aes(x = year, y = reorder(country, life_exp_2007), fill = lifeExp))+
+           geom_tile()+
+           scale_fill_gradient(
+             low = "darkblue" ,
+             high = "white") +
+           scale_x_continuous(expand = c(0, 0))
+
+
+```
+
+
+
+
+```{r, fig.width = 4.5, fig.height = 5, eval = FALSE, echo = FALSE}
+
+gapminder %>%
+  filter( continent == "Asia") %>%
+  ggplot(mapping = aes(x = year, y = country, fill = lifeExp)) +
+  geom_tile()
+ 
+ 
+
+
+```

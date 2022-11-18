@@ -1,0 +1,5 @@
+"0","set.seed(321)"
+"0","training.samples <- Ames$Sale_Price %>%"
+"0","  createDataPartition(p = 0.8, list = FALSE)"
+"0","train.data  <- Ames[training.samples, ]"
+"0","test.data <- Ames[-training.samples, ]"

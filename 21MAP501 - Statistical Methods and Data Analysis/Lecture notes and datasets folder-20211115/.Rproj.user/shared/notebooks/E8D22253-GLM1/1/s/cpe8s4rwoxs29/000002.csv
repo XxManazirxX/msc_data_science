@@ -1,0 +1,1 @@
+"0","plot(trees$Height,linmod1$residuals, main=""residuals versus height"")"

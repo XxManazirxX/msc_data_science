@@ -1,0 +1,288 @@
+---
+title: "Practical 6"
+author: "Axel Finke"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+---
+
+
+```{r setup, echo = FALSE, message = FALSE}
+# This is a setup chunk. It reads some global options from the external R
+# script rmarkdown_setup.R which is in the "scripts" folder.
+source(here::here("scripts", "rmarkdown_setup.R"))
+```
+
+
+### 6.0 Exercise
+
+Start a new R notebook named `practical_06.Rmd` and save it to the `rmd` folder of your RStudio project `practicals`. Make sure that all the R packages you need are loaded at the beginning. All the following exercises should be attempted within R code chunks of this notebook. All data files for this practical should be saved to the `data` subfolder of your project folder unless otherwise stated.
+
+
+
+
+### 6.1 Exercise
+
+Parse the following strings using a suitable `parse_*()` function.
+
+```{r, eval = FALSE}
+"1,5" # to be parsed as 1.5
+"September 21, 2020 16:25:59" 
+"€1.999,99"
+```
+
+```{r, eval = FALSE, echo = FALSE}
+parse_double("1,5", locale = locale(decimal_mark = ","))
+parse_datetime("September 21, 2020 16:25:59 GMT", format = "%B %d, %Y %T %Z")
+parse_number("€1.999,99", locale = locale(decimal_mark = ",", grouping_mark = "."))
+```
+
+
+### 6.2 Exercise
+
+Download the file `ramen_ratings.csv`. This data set contains contains ratings of different types of ramen and is a modified version of a data set on [kaggle](https://www.kaggle.com/residentmario/ramen-ratings) (but use the file from Learn and not the one from kaggle)
+
+a. Inspect the structure of the CSV file by printing the first four lines to the console.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    read_lines(file = here("data", "ramen_ratings.csv"), n_max = 6L)
+    
+    # We see that this file uses a comma as a decimal mark and a semicolon as
+    # a field separator (which is common in some European countries). Hence,
+    # we must use read_csv2() instead of read_csv() or specify the decimal
+    # mark within the more general function read_delim().
+    
+    # In addition, we will need to skip the first line and ignore any 
+    # line starting with "#".
+    ```
+
+b. Read the data into R.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    df <- read_csv2(file = here("data", "ramen_ratings.csv"), skip = 1)
+  
+    # Alternative:
+    df <- 
+    read_delim(
+      file = here("data", "ramen_ratings.csv"), 
+      delim = ";",
+      skip = 1
+    )
+    ```
+
+c. Inspect the tibble created in Question 1. What are the data types of the columns? Why are the names of the columns `Review #` and `Top Ten` encapsulated in back ticks? Reformat the column names to `snake_case`.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    glimpse(df)
+    # All columns are character except "Review #" and "Top Ten"
+    # The back ticks are needed in tibbles whenever column names have spaces
+    
+    df <- clean_names(df)
+      
+    ```
+d. Above, we learned that R uses heuristics to guess a sensible data type for each column. Why is the column `stars` of type `character` and not `double`?
+
+    ```{r, eval = FALSE, echo = FALSE}
+    # The column includes a number of entries that are "Unrated".
+    # This is also immediately revealed when we attempt to use parse_double()
+    # as in Question 5 below.
+    ```
+
+
+e. Convert `Stars` to a double vector using a suitable parser. 
+
+    ```{r, eval = FALSE, echo = FALSE}
+    df <- df %>%
+      mutate(stars = parse_double(stars, locale = locale(decimal_mark = ",")))
+    
+    # Note the argument locale = locale(decimal_mark = ",") is needed here
+    # because a comma is used as a decimal mark (by default, parse_double()
+    # assumes that "." is the decimal mark).
+    
+    # The output of parse_double() shows there are three reviews
+    # with Stars == "Unrated".
+    ```
+
+f. Change the data type of `stars`. What do the parsing failures mean for your analysis.
+
+    ```{r, eval = FALSE, echo = FALSE}
+    # We may have to exclude the "unrated" types of ramen from our analysis.
+    # Of course, we need to be open about this in our report.
+    ```
+
+
+
+
+### 6.3 Exercise
+
+Download the file `market_cap.csv`. This data set contains time-series data on the market capitalisation of ten US companies. Load the data into R and shape it into a tidy format (don't forget to ensure that all columns have sensible data types).
+
+```{r, echo = FALSE, eval = FALSE}
+df <- read_csv(here("data", "market_cap.csv")) %>%
+  pivot_longer(
+    cols      = !company,
+    names_to  = "date",
+    values_to = "market_capitalisation"
+  ) %>%
+  mutate(date = parse_date(date))
+
+df
+```
+
+
+### 6.4 Exercise
+
+The following code recreates the non-tidy data frame for the cats-and-dogs example from Section 2.1 in Chapter 6.
+
+```{r, eval = FALSE}
+df_nontidy <- tibble(
+  ` ` = c("selfless", "selfish"), 
+  cats = c(4L, 19L), 
+  dogs = c(25L, 3L)
+)
+```
+
+a. Reshape the data into the same tidy format shown in Section 2.1 in Chapter 6. Don't forget to ensure that all columns have sensible data types.
+
+    ```{r, echo = FALSE, eval = FALSE}
+    df_tidy <- 
+      df_nontidy %>%
+      pivot_longer(
+        cols = c(cats, dogs), 
+        names_to = "animal", 
+        values_to = "count"
+      ) %>%
+      rename(character = ` `)
+    
+    df_tidy
+    ```
+
+b. Reverse the operation so that you obtain the original non-tidy data frame `df`.
+    
+    ```{r, echo = FALSE, eval = FALSE}
+    df_nontidy <-
+      df_tidy %>%
+      pivot_wider(names_from = animal, values_from = count) %>%
+      rename(` ` = character, dogs = dog, cats = cat)
+    
+    df_nontidy
+    ```
+    
+
+### 6.5 Exercise
+
+Perform the reverse of the operations shown in Section 2.2 of Chapter 6, i.e. recreate the non-tidy tables `df_nontidy_1` and `df_nontidy_2` shown in Section 2.2. by lengthening/widening the tidy table `df_tidy`.
+
+```{r, eval = FALSE, echo = TRUE}
+df_tidy <- table1 %>%
+  mutate(
+    country = str_replace_all(country, c("Afghanistan" = "A", 
+                                         "Brazil" = "B", 
+                                         "China" = "C"))
+  ) %>%
+  mutate(across(c(cases, population), round, -3)) %>%
+  mutate(across(c(cases, population), as.integer))
+```
+
+
+```{r, eval = FALSE, echo = FALSE}
+df_nontidy_1 <- df_tidy %>%
+  pivot_longer(
+    cols     = c(cases, population), 
+    names_to = "type", 
+    values_to = "count"
+  )
+
+df_nontidy_2 <- df_tidy %>%
+  pivot_wider(
+    names_from  = year, 
+    values_from = c(cases, population)
+  )
+```
+
+
+### 6.6 Exercise
+
+Perform the reverse of the operations shown in Section 2.3 of Chapter 6, i.e. recreate the non-tidy tables `df_nontidy_3` and `df_nontidy_4` by separating/uniting columns in the tidy table `df_tidy`.
+
+```{r, eval = FALSE, echo = FALSE}
+df_nontidy_3 <- df_tidy %>%
+  separate(c("century", "year"), col = year, sep = 2) # the "2" here means separating after the 2nd character 
+
+df_nontidy_4 <- df_tidy %>%
+  unite(col = "rate", c(cases, population), sep = "/")
+```
+
+### 6.7 Exercise 
+
+Use `drop_na()` to perform the reverse of the operation from Section 2.4 of Chapter 6, i.e. to convert from explicit missingness (`df_missing_1`) to implicit missigness (`df_missing_2`), where `df_missing_1` is obtained as follows.
+
+```{r, eval = FALSE}
+df_missing_1 <- df_tidy
+df_missing_1[2, ] <- NA
+```
+
+
+```{r, echo = FALSE, eval = FALSE}
+df_missing_2 <- df_missing_1 %>% drop_na()
+```
+
+
+
+
+
+
+### 6.8 Exercise
+
+Comprehensive records of all journeys taken using Transport for London's bike hire scheme are available from <https://cycling.data.tfl.gov.uk/>. Download all the data about journeys started between January and (including) July 2020 to a subfolder `/data/tfl_bike_share/journeys` (which should not contain any other files) within your project folder. You can then access the full file paths of all these files in R using the `list.files()` command as follows. *Note:* These data files are *not* provided on Learn. This means that you need to download all 31 files yourself from the link mentioned above.
+
+```{r, eval = FALSE}
+list.files(path = here("data", "tfl_bike_share", "journeys"), full.names = TRUE)
+```
+
+Read the journey data into a single tidy data frame in R (don't forget to ensure that each variable has a sensible type and that the column names are appropriately formatted).
+
+**Hint:** You can use a `for`-loop to read the files into R to avoid manually importing each file separately (there are more better alternatives to loops for this tasks, e.g. the **purrr** package, which we have not covered in this module).
+
+    ```{r, eval = FALSE, echo = FALSE}
+    # Read the data into a single data frame
+    # ------------------------------------------------------------------------ #
+    
+    file_paths <- 
+      list.files(
+        path       = here("data", "tfl_bike_share", "journeys"), 
+        full.names = TRUE
+      )
+    
+    # Option I: use a for-loop
+    df <- tibble()
+    for (path in file_paths) {
+      df_new <- read_csv(file = path)
+      df <- bind_rows(df, df_new)
+    }
+    
+    # Option II: a slightly more elegant solution is via lapply() although 
+    # we didn't cover the apply() functions in class, so you don't need to 
+    # understand this.
+    df <- file_paths %>%
+      lapply(read_csv) %>% 
+      bind_rows()
+    
+    # Cleaning the data
+    # ------------------------------------------------------------------------ #
+    df_tidy <- df %>% 
+      remove_empty() %>%
+      clean_names() %>% 
+      mutate(end_date = parse_datetime(end_date, format = "%d/%m/%Y %H:%M")) %>% # 
+      mutate(start_date = parse_datetime(start_date, format = "%d/%m/%Y %H:%M")) %>%
+      mutate(across(c(end_station_id, start_station_id, 
+                      end_station_name, start_station_name), 
+                    as.factor)) %>%
+      mutate(duration = as.duration(duration)) %>% # recall that in R, the type "duration" is always in seconds
+      mutate(rental_id = as.integer(rental_id))
+    
+    glimpse(df_tidy)
+    ```
+
+
+
+
+

@@ -1,0 +1,4 @@
+"0","predictions <- train.model %>% predict(test.data)"
+"0","data.frame( R2 = R2(predictions, test.data$Sale_Price),"
+"0","            RMSE = RMSE(predictions, test.data$Sale_Price),"
+"0","            MAE = MAE(predictions, test.data$Sale_Price))"

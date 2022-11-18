@@ -1,0 +1,6 @@
+"0","trees2 %>% ggplot(aes(Height,Diameter))+"
+"0","      geom_point() +"
+"0","      geom_abline(aes(intercept=-6.1883945,slope= 0.2557471),colour=""red"")+"
+"0","      labs(x = ""Height in feet"", y = ""Diameter in inches"") +"
+"0","      ggtitle(""Height and diameter of black cherry trees"") +"
+"0","      theme_classic()"

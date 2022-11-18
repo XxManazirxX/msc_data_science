@@ -1,0 +1,2 @@
+"0","amescv<-cv.glmnet(Amespredict,garagecars,family=""poisson"")"
+"0","plot(amescv)"

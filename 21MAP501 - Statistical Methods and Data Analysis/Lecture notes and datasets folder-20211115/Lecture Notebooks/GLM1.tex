@@ -1,0 +1,822 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\title{Generalised Linear Models, 1: Linear regression}
+\author{Dr.~Eugenie Hunsicker}
+\date{Copyright Loughborough University, 2021\\
+Last update: 15 November}
+
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Generalised Linear Models, 1: Linear regression},
+  pdfauthor={Dr.~Eugenie Hunsicker},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\hypertarget{preamble}{%
+\section{Preamble}\label{preamble}}
+
+\hypertarget{read-in-packages}{%
+\subsection{Read in packages}\label{read-in-packages}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{library}\NormalTok{(}\StringTok{"tidyverse"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"magrittr"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"here"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"janitor"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"readxl"}\NormalTok{)}
+\FunctionTok{library}\NormalTok{(}\StringTok{"lindia"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{writing-mathematics-in-markdown}{%
+\subsection{Writing mathematics in
+Markdown}\label{writing-mathematics-in-markdown}}
+
+It is possible to incorporate mathematical equations in your markdown
+text using bits of syntax from the mathematical typesetting language
+LaTEX. For example:
+
+\[
+A + B\times C = E.
+\] I don't expect you to learn how to do this, but you will see bits of
+LaTEX code in the notebook version of this file--look for the dollar
+sign: \$. If you do want to learn how to create equations in markdown
+notebooks, you can look
+\href{http://www.math.mcgill.ca/yyang/regression/RMarkdown/example.html}{here}.
+
+\hypertarget{section-1-introduction-to-generalised-linear-models}{%
+\section{Section 1: Introduction to Generalised Linear
+Models}\label{section-1-introduction-to-generalised-linear-models}}
+
+Recall that a dataset stored as a tibble is a table in which rows
+represent a collection of \emph{cases} and columns represent
+\emph{variables} that can be recorded for all of the cases in the
+dataset.
+
+Generalised linear models are a broad family of \emph{statistical
+models} that can be used to answer questions about how one of the
+variables, which has been designated the \emph{response} or
+\emph{dependent} variable, is related to other variables in the tibble,
+which are called \emph{predictor} or \emph{independent} variables. We
+can use generalised linear models to answer three types of questions
+about our response variable:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Summary}: How much difference is there in the response
+  variable among groups? How much of a change do we see in the response
+  for each unit change in an input? What difference/change do we see in
+  the response when we control for \emph{confounding variables}, ie,
+  variables other than the input variable of interest that may affect
+  the response?
+\item
+  \textbf{Inference}: Is the difference in response between groups we
+  observe or the influence of an input on the response that we observe
+  in our data likely to have arisen just through random variation, or do
+  we have evidence that there is a meaningful connection?
+\item
+  \textbf{Prediction}: Given new values of input variables, what range
+  of responses can we expect?
+\end{enumerate}
+
+A \emph{generalised linear model} has the form of an equation:\\
+\[
+g(E(X;{\bf y})) = b_0 +b_1 y_1 + ... + b_k y_k.
+\]
+
+Here \({\bf y} = y_1, ... , y_k\) are the \emph{predictor variables}.
+They include both predictors of primary interest and any confounding
+variables. \(X\) is the \emph{response variable} of interest. The
+equation says that we assume it will vary randomly according to some
+\emph{distribution} whose mean value (also called the \emph{expected
+value}), which we write as \(E(X;{\bf y})\), depends on the predictors.
+We can also write \(X \sim f(E(X;{\bf y}),h)\). The function, \(f\), is
+a \emph{probability distribution function} (pdf), from a particular
+\emph{family of distributions} we will choose as part of setting up the
+model.
+
+Both the values of the \({\bf y} = y_1, ... y_k\) and the observed
+values of the responses, which we call \(x\) (little \(x\) for an
+observation, capital \(X\) for the variable), will be recorded as values
+for each row (case) of our dataset. The function \(g\) is called the
+\emph{link function}. We will talk more about this later. The values
+\(b_0, ..., b_k\) are called the \emph{model parameters} or sometimes
+\emph{model coefficients}. By fitting the model in R to our data using a
+process called \emph{regression}, we will obtain estimates of these
+parameters. Depending on the model, we may also obtain estimates of one
+or more \emph{hidden parameters}: these are the \(h\) above, and are
+assumed not to depend on the values of the \(y_i\)'s. The values of the
+\(b_i\)'s and of any hidden parameters will help us to answer our three
+types of questions.
+
+We can make the hidden parameters in a generalised linear model explicit
+through the following complete way to write the model: \[
+X \sim f(g^{-1}(b_0 +b_1 y_1 + ... + b_k y_k),h_1,\ldots,h_l).
+\] For the models we will consider, there will be at most one hidden
+parameter.
+
+In this tutorial, we will learn how to:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Decide an appropriate model form to answer a given question: this
+  means choosing the family, \(f\), of distributions, the form of the
+  link function, \(g\), and the variables \(X\) and \(y_1,...,y_k\) that
+  will appear in the model.
+\item
+  Fit a linear model using the \textbf{lm} function in R to perform the
+  required regression calculations.
+\item
+  Interpret the coefficients of the \textbf{lm} function to summarise
+  our data.
+\item
+  Predict the range of values we would expect given new inputs.
+\item
+  Evaluate how appropriate the model form we chose was using various
+  \emph{post hoc} tests.
+\item
+  Find values of the hidden model parameters and write the full model.
+\end{enumerate}
+
+Throughout we will illustrate various parts of this process with plots.
+
+\hypertarget{section-2-model-selection-fitting-and-inference-for-a-simple-gaussian-distribution-model-aka-a-linear-model.}{%
+\section{Section 2: Model selection, fitting, and inference for a simple
+Gaussian distribution model, aka a ``linear
+model''.}\label{section-2-model-selection-fitting-and-inference-for-a-simple-gaussian-distribution-model-aka-a-linear-model.}}
+
+The dataset ``trees'' is built into R. It contains data from 31 felled
+black cherry trees, including Height in feet, Girth (actually diameter)
+in inches measured 4.5 feet off the ground, and Volume of timber in
+cubic feet. We can take a look at it, and correct the name Girth to
+Diameter in a new dataframe, trees2 (note it is poor practice to
+overwrite the original data):
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trees2 }\OtherTok{\textless{}{-}}\NormalTok{ trees }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Diameter =}\NormalTok{ Girth) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(Height,Diameter,Volume)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{choosing-a-model}{%
+\subsection{2.1: Choosing a model}\label{choosing-a-model}}
+
+If we wanted to get a sense of this data, we might make a scatterplot of
+the Diameter and Height values:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{    trees2 }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Height, }\AttributeTok{y =}\NormalTok{ Diameter)) }\SpecialCharTok{+}
+      \FunctionTok{geom\_point}\NormalTok{()}\SpecialCharTok{+}
+      \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Height in feet"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Diameter in inches"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Height and diameter of black cherry trees"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-3-1} \end{center}
+
+Note that these points have a general upward drift from left to
+right--taller trees also tend to have a larger diameter at 4.5 feet off
+the ground. However, for any given height, eg 80 feet, we see a range,
+or \emph{distribution}, of measured diameters. We can fit a generalised
+linear model to this data to understand that drift, or trend.
+
+We can sort of eyeball a line that goes through the middle of the points
+and gives us a representation of the general trend in values:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{    trees2 }\SpecialCharTok{\%\textgreater{}\%}
+      \FunctionTok{ggplot}\NormalTok{(}\AttributeTok{mapping =} \FunctionTok{aes}\NormalTok{(}\AttributeTok{x =}\NormalTok{ Height, }\AttributeTok{y =}\NormalTok{ Diameter)) }\SpecialCharTok{+}
+      \FunctionTok{geom\_point}\NormalTok{()}\SpecialCharTok{+}
+      \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Height in feet"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Diameter in inches"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Height and diameter of black cherry trees"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{geom\_abline}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{intercept=}\SpecialCharTok{{-}}\FloatTok{5.5}\NormalTok{, }\AttributeTok{slope=}\FloatTok{0.25}\NormalTok{),}\AttributeTok{col=}\DecValTok{2}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-4-1} \end{center}
+
+Here the red line roughly indicates the mean value of the measurements
+for each height--not of course exactly for each value of height
+measured, but overall. This suggests that the following equation would
+be a reasonable model:\\
+\[
+E(X;y) = b_0 + b_1\times y,
+\]
+
+where \(y\)=height and \(X\)=diameter and \(b_0\) is the intercept of
+the line and \(b_1\) is the gradient.
+
+Aside: It may well bother you that here we have put the \(y\) variable
+on the horizontal axis and the \(x\) variable on the vertical axis,
+rather than the other way around as is usual in mathematics. I am not
+sure why, but this is what is standard in statistics, so it is worth
+getting accustomed to.
+
+Back to our equation. For simplicity, we often supress the \(y\) on the
+left side of the equation:\\
+\[ 
+E(X) = b_0 + b_1\times y.
+\]
+
+We have done two parts of choosing a model. We have chosen the variables
+that appear (\(y\)=height and \(X\)=diameter), and we have chosen the
+link function, \(g\), which here is just the \emph{identity}--that is,
+\(g(E(X)) = E(X)\), i.e., \(g\) doesn't change anything. The last thing
+we need to do is to specify the family of distributions that \(X\)
+should follow. We will use the old standard, the \emph{normal}, or
+\emph{Gaussian}, distributions. R prefers the name Gaussian, so we will
+use that. Gaussian distributions are also known as Bell curves. They
+look roughly like this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}
+  \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{x=}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{density=}\FunctionTok{dnorm}\NormalTok{(}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{m=}\DecValTok{0}\NormalTok{,}\AttributeTok{sd=}\DecValTok{1}\NormalTok{)),}\FunctionTok{aes}\NormalTok{(x,density))}\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{()}\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"x"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Density"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Standard Gaussian Distribution"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-5-1} \end{center}
+
+This family of distributions depends on two values: the \emph{mean}
+(center) and \emph{standard deviation} (spread) (sometimes the
+\emph{variance}, which is the square of the standard deviation, is given
+instead). Instead of \(f\), we write \(N\), so the Gaussian distribution
+with mean \(m\) and standard deviation \(\sigma\) will be written
+\(N(m,\sigma)\). The \emph{standard Gaussian} distribution has mean=0
+and standard deviation =1, ie, \(N(0,1)\). The height of the plot gives
+a sense of how likely we are to draw a given value at random from this
+distribution. So if we have a variable \(X \sim N(0,1)\) we are much
+more likely to draw a random value of \(X\) that is between -1 and 1
+(where the graph goes up) than we are to draw a random value of \(X\)
+that is between 8 and 10 (where the graph is quite low). We can quantify
+this precisely using areas, but that isn't really critical at this
+point.
+
+If we change the mean, then the value along the horizontal axis where
+the peak sits will change, eg, if we change the mean to \(m=5\) instead
+of \(m=0\).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}
+  \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{x=}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{density=}\FunctionTok{dnorm}\NormalTok{(}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{m=}\DecValTok{5}\NormalTok{,}\AttributeTok{sd=}\DecValTok{1}\NormalTok{)),}\FunctionTok{aes}\NormalTok{(x,density))}\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{()}\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"x"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Density"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Gaussian Distribution with m=5, sd=1"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-6-1} \end{center}
+
+Now we are most likely to choose values around 5 rather than around 0.
+
+If we change the standard deviation from 1 to 5, the peak gets wider and
+flatter:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{ggplot}\NormalTok{(}
+  \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{x=}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{density=}\FunctionTok{dnorm}\NormalTok{(}\FunctionTok{seq}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{10}\NormalTok{,}\DecValTok{10}\NormalTok{,}\FloatTok{0.01}\NormalTok{),}\AttributeTok{m=}\DecValTok{0}\NormalTok{,}\AttributeTok{sd=}\DecValTok{5}\NormalTok{)),}\FunctionTok{aes}\NormalTok{(x,density))}\SpecialCharTok{+}
+  \FunctionTok{geom\_line}\NormalTok{()}\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"x"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Density"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Gaussian Distribution with m=0, sd=5"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-7-1} \end{center}
+
+So now, although it is still more likely that we will choose a value of
+\(X\) between -1 and 1 than between 8 and 10, the difference isn't as
+much as it was before because it is less likely to choose a value
+between -1 and 1 (i.e.~graph is lower there than before) and more likely
+to choose one between 8 and 10 (i.e.~graph is higher there than before).
+
+So the two statements we can make to set up our model of tree height
+versus diameter are
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \(m(y) = E(X(y)) = b_0 + b_1\times y\) and
+\item
+  \(X \sim N(m(y),\sigma)\).
+\end{enumerate}
+
+We could also simply write:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\setcounter{enumi}{2}
+\tightlist
+\item
+  \(X \sim N(b_0 +b_1\times y,\sigma)\).
+\end{enumerate}
+
+Note here we are assuming that \(\sigma\) is a hidden parameter, i.e.,
+\(h=\sigma\) here, thus we assume that \(\sigma\) doesn't depend on the
+value of \(y\). This assumption has a fancy name:
+\emph{homoscedasticity}.
+
+A model in which the family of distributions, \(f\), is the Gaussian
+distribution is called a \emph{Gaussian linear model}, or sometimes
+simply a \emph{linear model}.
+
+\hypertarget{fitting-the-model}{%
+\subsection{2.2 Fitting the model}\label{fitting-the-model}}
+
+Before I just eyeballed the trendline. But we can fit it using
+regression. Gaussian linear models can be fit in R using the command
+\texttt{lm}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1}\OtherTok{\textless{}{-}}\FunctionTok{lm}\NormalTok{(Diameter}\SpecialCharTok{\textasciitilde{}}\NormalTok{Height,}\AttributeTok{data=}\NormalTok{trees2)}
+\NormalTok{linmod1}
+\FunctionTok{summary}\NormalTok{(linmod1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+Call:
+lm(formula = Diameter ~ Height, data = trees2)
+
+Coefficients:
+(Intercept)       Height  
+    -6.1884       0.2557  
+
+
+Call:
+lm(formula = Diameter ~ Height, data = trees2)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-4.2386 -1.9205 -0.0714  2.7450  4.5384 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)   
+(Intercept) -6.18839    5.96020  -1.038  0.30772   
+Height       0.25575    0.07816   3.272  0.00276 **
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.728 on 29 degrees of freedom
+Multiple R-squared:  0.2697,    Adjusted R-squared:  0.2445 
+F-statistic: 10.71 on 1 and 29 DF,  p-value: 0.002758
+\end{verbatim}
+
+From this, we get the best estimate of the trendline possible, which we
+call the \emph{regression line}. This gives us that the intercept is
+\(b_0=-6.1884\) and the gradient is \(b_1=0.2557\). We can get a few
+more decimal places in the values by doing this:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1}\SpecialCharTok{$}\NormalTok{coefficients}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+(Intercept)      Height 
+ -6.1883945   0.2557471 
+\end{verbatim}
+
+We can plot this now:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trees2 }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(Height,Diameter))}\SpecialCharTok{+}
+      \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+      \FunctionTok{geom\_abline}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{intercept=}\SpecialCharTok{{-}}\FloatTok{6.1883945}\NormalTok{,}\AttributeTok{slope=} \FloatTok{0.2557471}\NormalTok{),}\AttributeTok{colour=}\StringTok{"red"}\NormalTok{)}\SpecialCharTok{+}
+      \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Height in feet"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Diameter in inches"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Height and diameter of black cherry trees"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-10-1} \end{center}
+
+Actually, using ggplot, it is even easier to add a linear regression
+line to a plot:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trees2 }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(Height,Diameter))}\SpecialCharTok{+}
+      \FunctionTok{geom\_point}\NormalTok{() }\SpecialCharTok{+}
+      \FunctionTok{geom\_smooth}\NormalTok{(}\AttributeTok{method =} \StringTok{"lm"}\NormalTok{, }\AttributeTok{se =} \ConstantTok{FALSE}\NormalTok{,}\AttributeTok{colour=}\StringTok{"red"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{labs}\NormalTok{(}\AttributeTok{x =} \StringTok{"Height in feet"}\NormalTok{, }\AttributeTok{y =} \StringTok{"Diameter in inches"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{ggtitle}\NormalTok{(}\StringTok{"Height and diameter of black cherry trees"}\NormalTok{) }\SpecialCharTok{+}
+      \FunctionTok{theme\_classic}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-11-1} \end{center}
+
+\hypertarget{summary-and-prediction-with-the-model}{%
+\subsection{2.3 Summary and prediction with the
+model}\label{summary-and-prediction-with-the-model}}
+
+We can already use this output to \emph{summarise} our data. We can say
+that for each additional foot of height, the diameter increases on
+average by 0.2557471 feet.
+
+We also have a \emph{prediction} of the mean diameter of a tree given a
+height. So, for example, the mean diameter of an 80 foot tall tree
+should be \[
+E(X) =-6.1883945 + 0.2557471\times  80 = 14.2713735 \,\, {\rm   inches.}
+\]\\
+We can also use R to do this calculation as follows (differences are due
+to rounding differences in the calculation).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{predict}\NormalTok{(linmod1,}\FunctionTok{data.frame}\NormalTok{(}\AttributeTok{Height=}\DecValTok{80}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+       1 
+14.27138 
+\end{verbatim}
+
+Notice that there were five 80 foot trees in the dataset, with diameters
+of
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trees2[trees2}\SpecialCharTok{$}\NormalTok{Height }\SpecialCharTok{==} \DecValTok{80}\NormalTok{,]}\SpecialCharTok{$}\NormalTok{Diameter}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 11.1 14.2 17.9 18.0 18.0
+\end{verbatim}
+
+The mean of these values is
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{trees2[trees2}\SpecialCharTok{$}\NormalTok{Height }\SpecialCharTok{==} \DecValTok{80}\NormalTok{,]}\SpecialCharTok{$}\NormalTok{Diameter }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{mean}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 15.84
+\end{verbatim}
+
+which isn't what the model predicted. The reason is that this is not the
+prediction of the mean diameter of trees of a given height for the
+particular dataset we have, but rather a prediction of the overall mean
+diameter we would expect to find for 80 foot tall black cherry trees if
+we measured more and more and more of them. This is what is called
+\emph{inference}: making a prediction about a \emph{population} (all
+black cherry trees) from a \emph{sample} (the 31 felled cherry trees in
+this dataset).
+
+\hypertarget{residuals-in-a-linear-model}{%
+\subsection{2.4 Residuals in a linear
+model}\label{residuals-in-a-linear-model}}
+
+The difference between the measured diameter of a particular tree of a
+given height and the predicted mean diameter of trees of that height is
+called the \emph{residual} for that case (tree). So for the tree of
+height 80 feet and diameter 11.1, the residual is
+\(11.1 - 14.27138 = -3.17138\). So that particular tree was a bit more
+than 3 inches skinnier than we would have expected from our model. For
+the tree that was 80 feet tall with diameter 17.9, the residual was
+\(17.9 - 14.27138 = 3.62862\). So that tree was almost 7 inches fatter
+than our model predicted.
+
+We can examine all of the residuals for all of the cases in our set with
+the following command:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1}\SpecialCharTok{$}\NormalTok{residuals}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+         1          2          3          4          5          6          7 
+-3.4139043 -1.8351687 -1.1236745 -1.7253986 -3.8271227 -4.2386170  0.3090842 
+         8          9         10         11         12         13         14 
+-1.9926400 -3.1713756 -1.7926400 -2.7156285 -1.8483871 -1.8483871  0.2418428 
+        15         16         17         18         19         20         21 
+-0.9926400  0.1631072 -2.6501112 -2.5058584  1.7303485  3.6205784  0.2401187 
+        22         23         24         25         26         27         28 
+-0.0713756  1.7631072  3.7746014  2.7958658  2.7728773  2.7171301  3.6286244 
+        29         30         31 
+ 3.7286244  3.7286244  4.5383945 
+\end{verbatim}
+
+If we take the mean of these values, we will get 0 (up to rounding
+error).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{mean}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residuals)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] -3.192451e-17
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{round}\NormalTok{(}\FunctionTok{mean}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residuals),}\DecValTok{7}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 0
+\end{verbatim}
+
+\hypertarget{hidden-model-parameter}{%
+\subsection{2.5 Hidden model parameter}\label{hidden-model-parameter}}
+
+Recall that Gaussian distributions depend on two parameters, the mean
+and the standard deviation. We have created a model in which the mean
+diameter is a linear function of the height. The standard deviation in
+our model will not depend on height. It is given (up to rounding error!)
+by the standard deviation of the residuals:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sd}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residuals)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 2.681866
+\end{verbatim}
+
+Note that if we create a histogram of the residuals, it looks vaguely
+like a Gaussian curve, in that it goes up in the middle and down at the
+sides:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{hist}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residuals)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-19-1} \end{center}
+
+This is important, because it says that the residuals have a roughly
+normal or Gaussian distribution, which is also one of the assumptions
+implicit in the form of the model.This tells us that the choice of the
+``gaussian'' family of distributions is pretty good here. We can also
+look at something called a \emph{QQ plot}, which will look roughly like
+a straight line if our choice of distribution is good:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{qqnorm}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residual)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-20-1} \end{center}
+
+Note that if we plot a line on the QQ plot with intercept = 0 and
+gradient = 2.681866, it is a pretty good fit:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{qqnorm}\NormalTok{(linmod1}\SpecialCharTok{$}\NormalTok{residual)}
+\FunctionTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{,}\FloatTok{2.681866}\NormalTok{,}\AttributeTok{col=}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-21-1} \end{center}
+
+For a Gaussian family, the approximate gradient of the QQ plot of
+residuals is given by the standard deviation of the residuals.
+
+We can also extract the exact estimate of the standard deviation from
+the model (without rounding errors) as follows:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(linmod1)}\SpecialCharTok{$}\NormalTok{sigma}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+[1] 2.727713
+\end{verbatim}
+
+When we look at a scatterplot of residuals versus height, we see a
+pretty random scatter that is roughly the same width everywhere:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(trees}\SpecialCharTok{$}\NormalTok{Height,linmod1}\SpecialCharTok{$}\NormalTok{residuals, }\AttributeTok{main=}\StringTok{"residuals versus height"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h=}\DecValTok{0}\NormalTok{,}\AttributeTok{col=}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-23-1} \end{center}
+
+This is important. Examining this plot ensures that the spread of
+diameters around the regression line does not depend on the variable,
+Height. This says that the assumption of \emph{homoscedasticity} is
+satisfied, that is, the hidden variable, \(\sigma\) is indeed
+independent of the predictor variables in the model.
+
+\hypertarget{the-full-and-final-model-and-summary-of-investigation}{%
+\subsection{2.6 The full and final model and summary of
+investigation}\label{the-full-and-final-model-and-summary-of-investigation}}
+
+So the model we have built is:
+
+\[
+{\rm diameter} \sim N(-6.1884 + 0.2557 \times  {\rm height}, 2.727713).
+\]
+
+We have also checked that the model is reasonable by checking the
+assumptions \emph{Linearity}, \emph{Homoscedasticity} and
+\emph{Normality} of the model:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Linearity: looking at the scatterplot of diameter versus height, which
+  was roughly linear, and
+\item
+  looking three plots of residuals:
+
+  \begin{enumerate}
+  \def\labelenumii{\alph{enumii}.}
+  \item
+    Homoscedasticity: the scatter of residuals versus height, which is
+    roughly the same width across the plot and which doesn't show any
+    indication of trend
+  \item
+    Normality: the histogram of residuals, which looks roughly Gaussian
+  \item
+    Normality: the qq plot of residuals, which looks roughly like a
+    straight line.
+  \end{enumerate}
+\end{enumerate}
+
+The plots we investigate to evaluate if the model assumptions are
+reasonable are called \emph{diagnostic plots}. There is a single command
+that will give all of the diagnostic plots at once:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{linmod1 }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{gg\_diagnose}\NormalTok{(}\AttributeTok{max.per.page =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-1} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-2} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-3} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-4} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-5} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-6} \end{center}
+
+\begin{center}\includegraphics{GLM1_files/figure-latex/unnamed-chunk-24-7} \end{center}
+
+The first four plots are the ones we will look at for now. The fourth
+plot of residuals versus fitted can replace the plot of outcome versus
+predictor. There is actually also a fourth assumption also called
+\emph{independence}, which says that the residuals do not depend on
+order in which data was collected. However, in this setting, we don't
+have the order of the data, so we can't check it. We will talk more
+about it in a later lecture about model evaluation.
+
+\hypertarget{exercise-2}{%
+\subsection{2.7 Exercise 2}\label{exercise-2}}
+
+Now consider the relationship between tree height and tree volume for
+the same dataset in a new notebook, going through all of the same steps
+as above.
+
+\end{document}

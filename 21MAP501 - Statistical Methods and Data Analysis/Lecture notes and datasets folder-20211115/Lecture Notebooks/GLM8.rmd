@@ -1,0 +1,299 @@
+---
+title: "Generalised Linear Models, 8: Lasso regression for variable selection"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+
+```{r, message = FALSE,comment=FALSE}
+library("rio")
+library("magrittr")
+library("here")
+library("janitor")
+library("pROC")
+library("AmesHousing")
+library("tidyverse")
+library("rcompanion")
+library("lme4")
+library("merTools")
+library("glmnet")
+library("caret")
+library("lme4")
+```
+
+# Section 12:  Penalised regression
+
+## 12.1:  The philosophy of penalised regression
+
+We have discussed already some approaches to selecting variables and reducing dimensionality in statistical modelling, such as dropping variables that are missing a lot of cases and removing predictors that are highly correlated to other predictors.  For factors, we can consider dropping levels with very few associated cases (and the corresponding cases), combining levels according to some domain-related considerations, or treating factors with a high number of levels as random effects.   But quite often there are still a very high number of variables, and we don't have a good sense of where to begin selecting the best ones for a model.  This is the setting where lasso penalised regression is very useful.
+
+Penalised regression is a way of estimating coefficients in a statistical model that is different from the way they are conventionally estimated in statistics.  The conventional method is called _maximal likelihood estimation_.  This involves writing down the function that gives the probability of the data observed as a function of model parameters, called the likelihood function, and maximising it over the parameter space.  Penalised methods add a negative term to the likelihood function that corresponds to a "cost" for each new variable introduced in the model.   Thus maximising the penalised likelihood creates a balance between getting the highest likelihood and keeping the number of variables low.  Each variable that is included in the optimised model has to have been responsible for a large enough increase in likelihood to merit its inclusion.  
+
+The function that is maximised has the form:
+$$
+P(Data|Parameters) - \lambda \sum_{parameters} (\mbox{cost for that parameter})
+$$
+Depending on the choice of the variable $\lambda$, either more variables or fewer variables will end up included in the model.  If $\lambda = 0$, of course, this is just maximal likelihood, because the first term is the likelihood function.  If $\lambda$ is very very large, then no parameters will be added.  So part of the process of penalised regression is deciding an appropriate choice of $\lambda$.  This is carried out in the glmnet package using a method called "drop-one cross-validation". For each value of lambda, a single case is held out and the model built on the remaining cases, then tested on the single holdout.  This is done many times.  The value of lambda for which the models give the best prediction on the holdout is selected as the optimal choice of lambda for that situation.  Sometimes we may want to choose a slightly smaller, more conservative model than that one, so glmnet also suggests a slightly larger value of $\lambda$ we might want to chose instead.
+
+For the value of $\lambda$ we choose, then, we look at the variables selected, and finally build a new model on all the data using those variables as our final model.
+
+I will add here that the "cost" of each parameter is some function of the parameter, and different cost functions give different types of penalised regression for different purposes.  The one we will use here is called "lasso", because that is the one that is particularly adapted for variable selection.  In lasso, the cost function is just the modulus of the parameter value.
+
+Whew!  Let's see how that goes in practice.  We will consider the AmesHousing data, trying to predict sale price from all of the other variables, and go through the whole process.  I am following along a useful "vignette" by the package's authors, which can be seen [here]
+(https://web.stanford.edu/~hastie/glmnet/glmnet_alpha.html).
+
+## Lasso regression for the Ames Housing dataset
+
+### A first look
+
+```{r}
+Ames<-make_ames()
+```
+
+The function we will use to carry this out uses a different syntax from glm or glmer.  In particular, rather than glm(X ~ y, etc), it takes as input a matrix $x$ of predictors and a vector $y$ of responses.  So we first have to create these objects.
+
+For the predictors, we will remove the columns corresponding to the response, as well as the latitude and longitude variables which we already saw were strongly correlated with Neighborhood.  We use the model.matrix function to expand all of the factors into dummy variables.  
+```{r}
+saleprices<-as.vector(Ames$Sale_Price)
+Amespredict<-model.matrix(~.-1,Ames[,-c(79:81)])
+```
+
+Now we can fit our model
+```{r}
+amesfit<-glmnet(Amespredict,saleprices)
+```
+
+First we can see the order in which variables emerge from the penalty as it is reduced.  To do this we use the following command:
+```{r}
+plot(amesfit,xvar = "lambda")
+```
+
+This is a bit hard to read, but at the bottom is the log of the penalty lambda.  Each coloured curve is the value of some parameter.  At the far right, they are all zero, and as they move left, as Lambda gets smaller, more and more rise up above zero.  At the top of the plot is the number of nonzero parameters for each value of Log Lambda--we see that when Log Lambda is equal to 10, there are eight nonzero coefficients.  By the time it has shrunk to 6, there are 168 nonzero coefficients.
+
+We can also see how adding more variables improves the fit of the model by plotting the fraction of deviance that is explained in the model as the number of coefficients increases:
+
+```{r}
+plot(amesfit,xvar="dev")
+```
+
+So this tells us that with just 16 nonzero coefficients other than intercept, already 80% of the deviance is explained.  If we want, we can figure out which these are.  First, we print out the values of lambda compared to the % Deviance and Df (number of variables)
+```{r}
+amesfit
+```
+
+We want to know the coefficients when $\lambda = 8002$.  We can get these through the following (note that s is $\lambda$ in this function):
+```{r}
+ames18<-coef(amesfit, s=8002)
+ames18@Dimnames[[1]][1+ames18@i]
+```
+
+Note that some of these are covariates:  Year_Built,Year_Remod_Add, Mas_Vnr_Area, Total_Bsmt_SF, Gr_Liv_Area, Fireplaces, Garage_Cars, Garage_Area.
+
+Others of these are levels of factors.  Note that in this algorithm, the factors were all separated into separate dummy variables for each level above base.  And some can be selected and others not.  Here, the algorithm selected
+* 3 levels of 9 possible for Overall_Qual
+* 1 level of 28 possible for Neighborhood
+* 1 level of 3 possible for Exter_Qual
+* 1 level of 4 possible for Bsmt_ExposureGd
+* 1 level of 6 possible for BsmtFin_Type_1GLQ
+* 1 level of 4 possible for Kitchen_QualTypical
+
+When we choose variables for a model, however, we should really be either including or excluding all levels.  There is a version of lasso implemented in the R package grpreg that creates a penalty that will either include or exclude all levels of a factor together.  This is the best thing to do, and you can read about it [here](http://pbreheny.github.io/grpreg/articles/getting-started.html).  It is also possible to use a version of lasso that permits the inclusion of random effects, such as neighborhood, which you can read about [here](https://cran.r-project.org/web/packages/glmmLasso/glmmLasso.pdf). For this module, though, we will just make a judgement based on other principles.
+
+First, though, let's continue with the tools in glmmet.  
+
+### Choosing lambda and variables with cv.glmnet
+
+We have looked at how many variables are required to explain a certain proportion of the variance in our response variable, but we don't know how well models with this, or any other, number of variables will perform when applied to new data.  For this, we want to use the cross validation tool to select a range of optimal values for $\lambda$.  Because cross validation uses random resampling, in order to get a reproducible result, we will set a seed.
+
+```{r}
+set.seed(312)
+amescv<-cv.glmnet(Amespredict,saleprices)
+plot(amescv)
+```
+
+On the bottom here again is log(lambda), and at the top, the number of variables selected at each value.  The y-axis here is a measure of the error that the fitted models made on holdouts, where smaller is better.  So we see as lambda decreases, the error gets smaller until around log(lambda)=6.  Then it starts to get better again.  Given the error bars, we could really chose a log(lambda) anywhere between about 8 and 6 and get similar performance.  Since we already saw that 80% of the variance was explained with just 16 coefficients, I would suggest we look for a smaller rather than a larger model, and use the variables selected up to log(lambda)=6 as a way of deciding if we include factors or not.  
+
+To get the new coefficients selected at the higher value of lambda, we use:
+
+```{r}
+ames33<-coef(amesfit,s=amescv$lambda.1se)
+setdiff(ames33@Dimnames[[1]][1+ames33@i],ames18@Dimnames[[1]][1+ames18@i])
+```
+
+So there are some new covariates added:
+Lot_Area
+BsmtFin_SF_1
+Bsmt_Full_Bath
+Kitchen_AbvGr
+Wood_Deck_SF
+Screen_Porch
+Misc_Val
+
+We have also added levels from the factors from before, so we now have
+* 4 levels of 9 possible for Overall_Qual
+* 5 level of 28 possible for Neighborhood
+* 1 level of 3 possible for Exter_Qual
+* 2 level of 4 possible for Bsmt_Exposure
+* 1 level of 6 possible for BsmtFin_Type_1
+* 1 level of 4 possible for Kitchen_Qual
+
+And we have added levels from new factors:
+* MS_SubClass
+* MS_Zoning
+* Land_Contour
+* Overall_Cond
+* Roof_Style
+* Roof_Matl
+* Foundation
+* Functional
+* Heating_QC
+* Pool_QC
+* Sale_Type
+
+So from here, we will plan to retain all of the covariates that have been selected so far:
+Year_Built,Year_Remod_Add, Mas_Vnr_Area, Total_Bsmt_SF, Gr_Liv_Area, Fireplaces, Garage_Cars, Garage_Area, Lot_Area, BsmtFin_SF_1, Bsmt_Full_Bath, Kitchen_AbvGr, Wood_Deck_SF, Screen_Porc, Misc_Val
+
+We have also had enough neighborhoods selected to merit inclusion of this as a random effect.
+
+So we need to consider which of the remaining factors to include, based on how many levels are selected by the smallest value of lambda we would consider:
+
+```{r}
+amesmax<-coef(amesfit,s=amescv$lambda.min)
+amesmax@Dimnames[[1]][1+amesmax@i]
+```
+
+So we now have:
+* MS_SubClass:  6 out of 16 coeff
+* MS_Zoning:  4 out of 6 coeff
+* Land_Contour: 2 out of 3 coeff 
+* Overall_Qual: 8 out of 9 coeff
+* Overall_Cond: 7 out of 10 coeff 
+* Roof_Style:  2 out of 5 coeff
+* Roof_Matl:  3 out of 7 coeff
+* Exter_Qual:  2 out of 3 coeff
+* Foundation:  2 out of 5 coeff
+* Bsmt_Exposure: 4 out of 4 coeff
+* BsmtFin_Type_1: 2 out of 6 coeff
+* Heating_QC:    4 out of 4 coeff
+* Kitchen_Qual: 4 out of 4 coeff
+* Functional: 4 out of 7 coeff
+* Pool_QC: 3 out of 4 coeff
+* Sale_Type: 2 out of 9 coeff
+
+I would suggest that we include all of the factors for which at least half of the coefficients were selected, so MS_Zoning, Land_Contour, Overall_Qual, Overall_Cond, Exter_Qual, Bsmt_Exposure, Heating_QC, Kitchen_Qual, Functional, and Pool_QC.
+
+It seems to me that MS_Subclass would be useful to include as a random effect.
+
+## Fitting and evaluating the final model
+
+Okay, so we have our proposal for the variables to include in our final model!  Yay!  Because of the way in which we have chosen our variables, statistical significance is not meaningful anymore (significance is only meaningful when you start from an externally generated hypothesis and test it on data).  So to evaluate model quality, we will want to build the model on a training set and test it on a testing set.
+
+```{r}
+set.seed(321)
+training.samples <- Ames$Sale_Price %>%
+  createDataPartition(p = 0.8, list = FALSE)
+train.data  <- Ames[training.samples, ]
+test.data <- Ames[-training.samples, ]
+```
+Now we create the model on the training data.
+
+```{r}
+train.model <- lmer(Sale_Price~Year_Built+Year_Remod_Add+ Mas_Vnr_Area+ Total_Bsmt_SF+ Gr_Liv_Area+ Fireplaces+ Garage_Cars+ Garage_Area+ Lot_Area+ 
+          BsmtFin_SF_1+Bsmt_Full_Bath+Kitchen_AbvGr+Wood_Deck_SF+Screen_Porch+Misc_Val+
+ MS_Zoning+ Land_Contour+ Overall_Qual+ Overall_Cond+ Exter_Qual+ Bsmt_Exposure+ Heating_QC+ Kitchen_Qual+ Functional+ Pool_QC +
+               (1|Neighborhood)+(1|MS_SubClass)
+                  , data = train.data)
+```
+
+Now we will make predictions on the testing set.  For models whose response variable is numeric, that is, Gaussian, Poisson or quasipoisson, we consider three performance indicators, R2, RMSE and MAE.
+
+```{r}
+predictions <- train.model %>% predict(test.data)
+data.frame( R2 = R2(predictions, test.data$Sale_Price),
+            RMSE = RMSE(predictions, test.data$Sale_Price),
+            MAE = MAE(predictions, test.data$Sale_Price))
+
+```
+
+So this is pretty good performance--the R2 is 87, which means there is a very good correlation of about 0.93 between the predicted price and the actual sale price on the testing set:
+```{r}
+sqrt(0.8723264)
+```
+
+We can compare this to the Rsquared for the model on the training data:
+```{r}
+library(rsq)
+```
+```{r}
+rsq.lmm(train.model)
+```
+
+The Rsquared on the training data was 0.9132695, as compared to 0.8607292 on the testing data, so there was still definitely some overfitting, but it is still quite a good model.
+
+
+### Other families
+
+Although I demonstrated here for a Gaussian model, glmnet can be used for any generalised linear model using the same "family" option as for glm, and the general process is the same.  As with glmer, "quasipoisson" is not available as a family for glmnet.  However, as a bonus, "multinomial" is.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

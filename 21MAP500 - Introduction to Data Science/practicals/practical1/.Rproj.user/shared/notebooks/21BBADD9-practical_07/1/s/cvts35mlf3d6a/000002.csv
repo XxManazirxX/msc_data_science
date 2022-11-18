@@ -1,0 +1,4 @@
+"0","gapminder%>%"
+"0","  filter(country == ""United KIndom"") %>%"
+"0","  ggplot(mapping = aes(x = year, y = lifeExp)) +"
+"0","  geom_line()"

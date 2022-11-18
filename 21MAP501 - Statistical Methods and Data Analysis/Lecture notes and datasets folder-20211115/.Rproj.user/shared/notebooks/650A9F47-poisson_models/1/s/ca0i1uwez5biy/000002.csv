@@ -1,0 +1,3 @@
+"0","AwayT <- pl_20_21 %>%"
+"0","  select(Div, HomeTeam, AwayTeam, FTHG, FTAG, Date, season) %>%"
+"0","  mutate(Home = 0)"

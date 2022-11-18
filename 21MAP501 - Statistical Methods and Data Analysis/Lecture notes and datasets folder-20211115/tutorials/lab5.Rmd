@@ -1,0 +1,158 @@
+---
+title: "Generalised Linear Models 5: Quantifying uncertainty through confidence and prediction intervals"
+author: "Dr. Eugenie Hunsicker"
+date: "Copyright Loughborough University, `r format(Sys.time(), '%Y')`  \n Last update: `r format(Sys.time(), '%d %B')`"
+output:
+  html_document:
+    self_contained: true
+    highlight: textmate  # specifies the syntax highlighting style
+    toc: true # should a table of contents (TOC) be shown in the document?
+    toc_depth: 2 # the number of levels (e.g. section, subsection, subsubsection) shown in the TOC
+    number_sections: false # should the sections be numbered?
+---
+
+
+
+```{r, message = FALSE,comment=FALSE}
+library("MASS")
+library("sandwich")
+library("investr")
+library("rio")
+library("pROC")
+library("nnet")
+library("tidyverse")
+library("magrittr")
+library("here")
+library("janitor")
+library("readxl")
+library("rcompanion")
+library("ggcorrplot")
+library("corrr")
+library("effects")
+```
+
+```{r, message = FALSE,comments=FALSE}
+autot<-clean_names(read_csv(here("data", "Automobile_data.csv"),
+                            na = c("?","","NA","N/A","Na"),))  
+```
+
+
+```{r}
+linmod4<-lm(highway_mpg~width+curb_weight+fuel_type+body_style, data=autot)
+
+linmod5<-glm(as.factor(aspiration)~drive_wheels + engine_size+ horsepower,family="binomial",data=autot)
+```
+
+```{r}
+confint(linmod4)
+```
+```{r}
+confint(linmod5)
+```
+
+
+
+```{r}
+ggplot(autot,aes(x=Height,y=Diameter))+
+         geom_point(color=2,size=2)+
+         geom_smooth(method=lm, color='#2C3E50')
+```
+
+
+```{r}
+
+trees2<- trees2 %>%
+mutate(logheight = log(Height)) %>%
+mutate(logvol = log(Volume)) %>%
+mutate(logdiam = log(Diameter))
+linmod3<-lm(logvol~logheight + logdiam,data=trees2)
+summary(linmod3)
+
+
+```
+
+
+```{r}
+std.err<-  sqrt(diag(vcovHC(linmod3,type="HC0")))
+r.est <- cbind(Estimate= coef(linmod3), "Robust SE" = std.err,
+"Pr(>|z|)" = 2 * pnorm(abs(coef(linmod3)/std.err), lower.tail=FALSE),
+LL = coef(linmod3) - 1.96 * std.err,
+UL = coef(linmod3) + 1.96 * std.err)
+
+r.est
+```
+
+
+
+```{r}
+
+comic_book_characters<-read_csv(here("data/comic_characters.csv"))
+comic_book_characters <- comic_book_characters %>%
+mutate_at(vars(ID, ALIGN,EYE,HAIR,SEX,LGBTQ,ALIVE,MONTH_FA,UNIVERSE),
+list(factor))
+clean_comic_book_characters<- comic_book_characters %>%
+drop_na()
+comic_book_model_data <- clean_comic_book_characters %>%
+filter(YEAR_FA >= 1956 & YEAR_FA <= 1999 )
+max(comic_book_model_data$YEAR_FA)
+min(comic_book_model_data$YEAR_FA)
+
+
+
+comic_linmod3<-glm(UNIVERSE~YEAR_FA,family="binomial",data=comic_book_model_data)
+comic_linmod3
+```
+
+```{r}
+ilink <-family(comic_linmod3)$linkinv
+newcm<-with(comic_book_model_data,data.frame(YEAR_FA=seq(min(comic_book_model_data$YEAR_FA),max(comic_book_model_data$YEAR_FA),length=100)))
+newcm<- cbind(newcm,predict(comic_linmod3,newcm,type="link",se.fit=TRUE)[1:2])
+newcm<-transform(newcm,Fitted=ilink(fit),Upper=ilink(fit+(1.96*se.fit)),
+                  Lower=ilink(fit-(1.96*se.fit)))
+ggplot(comic_book_model_data, aes(x=YEAR_FA,y=as.numeric(as.factor(UNIVERSE))-1 ))+
+  geom_ribbon(data = newcm, aes(ymin = Lower, ymax = Upper, x = YEAR_FA),
+                fill = "steelblue2", alpha = 0.2, inherit.aes = FALSE) +
+      geom_line(data = newcm, aes(y = Fitted, x = YEAR_FA)) +
+    geom_point()+
+    labs(y = "Probability of UNIVERSE", x = "YEAR_FA")
+```
+
+```{r}
+
+multi_comic<-multinom(ALIGN~ALIVE+YEAR_FA,data=comic_book_model_data)
+multi_comic
+
+
+```
+```{r}
+multi_comic_eff <- Effect("ALIVE", multi_comic)
+plot(multi_comic_eff)
+```
+
+
+
+```{r}
+multi_comic_eff2 <- Effect("YEAR_FA", multi_comic)
+plot(multi_comic_eff2)
+```
+
+
+```{r}
+comic_poissonmod<-glm(APPEARANCES~YEAR_FA+ALIGN+ALIVE,data=comic_book_model_data,family="poisson")
+summary(comic_poissonmod)
+
+
+
+comic_quasipoissonmod<-glm(APPEARANCES~YEAR_FA+ALIGN+ALIVE,data=comic_book_model_data,family="quasipoisson")
+summary(comic_quasipoissonmod)
+comic_book_characters$ALIVE
+```
+
+```{r}
+cip2<-predict(comic_poissonmod,newdata = data.frame(YEAR_FA=1990,ALIGN ="Good Characters", ALIVE = "Living Characters" ),type="link",se.fit=TRUE)
+c(family(comic_poissonmod)$linkinv(cip2$fit-1.96*cip2$se.fit),family(comic_poissonmod)$linkinv(cip2$fit),family(comic_poissonmod)$linkinv(cip2$fit+1.96*cip2$se.fit))
+```
+```{r}
+cip3<-predict(comic_quasipoissonmod,newdata = data.frame(YEAR_FA=1990,ALIGN ="Good Characters", ALIVE = "Living Characters" ),type="link",se.fit=TRUE)
+c(family(comic_quasipoissonmod)$linkinv(cip3$fit-1.96*cip3$se.fit),family(comic_quasipoissonmod)$linkinv(cip3$fit),family(comic_quasipoissonmod)$linkinv(cip3$fit+1.96*cip3$se.fit))
+```
